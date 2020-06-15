@@ -1,0 +1,105 @@
+@charset "utf-8";
+
+body {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    display: flex; justify-content: center; align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+h2 {
+	margin: 0 0 1em 0; padding: 1em;
+    background-color: #337ab7;
+    border-color: #2e6da4;
+    color: #fff;
+    text-shadow: 0 2px 3px #000;
+}
+
+footer {
+    display: flex;
+    margin: 1em 0 0 0; 
+}
+
+footer >input {
+    flex: 1;
+    padding: 1em;
+    font-family: 'Font Awesome 5 Free';
+    color: #ffffff;
+    border: 1px solid transparent;
+}
+
+footer >input[type=submit] {
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+}
+
+footer >input[type=submit]:hover,
+footer >input[type=submit]:focus {
+    background-color: #47a447;
+    border-color: #398439;
+}
+/*
+footer >input[type=submit].edit {
+    background-color: #f0ad4e;;
+    border-color: #eea236;
+}
+
+footer >input[type=submit].edit:hover,
+footer >input[type=submit].edit:focus {
+    background-color: #ed9c28;
+    border-color: #d58512;
+}
+*/
+footer >input[type=reset] {
+    background-color: #d9534f;
+    border-color: #d43f3a;
+}
+
+footer >input[type=reset]:hover,
+footer >input[type=reset]:focus {
+    background-color: #d2322d;
+    border-color: #ac2925;
+}
+
+table {
+    width: 100%;
+}
+
+td >input[type=text],
+td >input[type=number],
+td >input[type=textarea],
+td >select {
+    width: 100%;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+#close {
+    font-family: 'Font Awesome 5 Free';
+    display: block;
+    float: right;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#close:hover {
+    transform: scale(1.2);
+}
+
+main {
+    width: 400px;
+    padding: 1em;
+    border: 1px solid #777777;
+    background-color: #fefefe;
+}
+
+form {
+    position: relative;
+}
+
+.bg_loading {
+    position: absolute;
+}
+
+body:not(.edit) input[type=reset] {
+    display: none;
+}

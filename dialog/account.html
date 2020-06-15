@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+@import "/css/dialog.css";
+
+body,
+input,
+textarea {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+th {
+    /*background-color: #5bc0de;
+    color: #fff;*/
+    width: 120px;
+}
+
+td >input[type=text],
+td >textarea {
+    width: 100%;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+textarea {
+    resize: none;
+}
+        </style>
+        <script>
+		</script>
+    </head>
+    <body>
+        <main>
+            <h2>
+                계정
+                <span class="glyph close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <tr>
+                        <th>아이디</th>
+                        <td>
+                            <input name="username" type="text" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>비밀번호</th>
+                        <td>
+                            <input name="password" type="password" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>비밀번호 확인</th>
+                        <td>
+                            <input name="password" type="password" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>권한</th>
+                        <td>
+                            <select name="level">
+                                <option></option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; 삭제">
+                    <input type="submit" value="&#xf00c; 적용">
+                </footer>
+            </form>
+        </main>
+        <script>
+
+const $ = {
+    thread: new Worker("/js/thread.js"),
+    agent: window.localStorage.getItem("agent"),
+    id: window.sessionStorage.getItem("item_id")
+};
+
+if (!$.agent) {
+    throw "";
+}
+
+if ($.id === null) {
+    document.body.classList.add("new");
+}
+
+$.thread.postMessage({
+    action: "initialize",
+    agent: $.agent
+});
+
+document.body.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+
+    const request = {
+        target: "item",
+        item: {
+            maker: this.elements["maker"].value,
+            name: this.elements["name"].value,
+            spec: this.elements["spec"].value
+        }
+    };
+
+    if (document.body.classList.contains("new")) {
+        request.command = "add";
+    } else {
+        request.command = "set";
+        request.id = Number($.id);
+    }
+
+    $.thread.postMessage({
+        action: "request",
+        request: request
+    });
+};
+
+document.body.querySelector("form").onreset = function (e) {
+    e.preventDefault();
+
+    $.thread.postMessage({
+        action: "request",
+        request: {
+            command: "remove",
+            target: "item",
+            id: Number($.id)
+        }
+    });
+};
+
+        </script>
+    </body>
+
+</html>

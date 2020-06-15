@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+@import "/css/dialog.css";
+
+body,
+input,
+textarea {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+#file {
+    height: 50px; margin-bottom: 1em;
+    display: flex; justify-content: center; align-items: center;
+    border: 2px dotted #777777;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+#file:empty::before {
+    content: "첨부된 파일 없음.";
+    color: #777777;
+    font-weight: normal;
+    font-size: initial;
+}
+
+body.new input[type=reset] {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function initialize(id) {
+    $.id = id;
+    
+    $.thread.request({
+        command: "get",
+        target: "file",
+        id: id,
+        doc: "spend"
+    }, function (e) {
+        switch (this.status) {
+        case 200:
+            const file = JSON.parse(this.responseText);
+
+            document.getElementById("file").textContent = file.name;
+
+            break;
+        case 204:
+            document.body.classList.add("new");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ xhr.status);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <main>
+            <h2>
+                파일 첨부
+                <span class="glyph close" id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <div id="file"></div>
+                <input type="file" name="file">
+                <footer>
+                    <input type="reset" value="&#xf2ed; 삭제">
+                    <input type="submit" value="&#xf00c; 적용">
+                </footer>
+            </form>
+        </main>
+
+        <script src="/js/communicator.js"></script>
+        <script>
+
+const $ = {};
+
+try {
+    $.thread = new Thread();
+} catch (e) {
+    top.location.reload();
+
+    throw e;
+}
+
+document.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+        
+    const file = this.elements["file"].files[0];
+    
+    if (!file) {
+        return this.elements["file"].focus();
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        $.thread.upload($.id, "spend", file.name, this.result, function (e) {
+            switch (this.status) {
+            case 200:
+                parent.location.reload();
+                
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    };
+
+    reader.readAsArrayBuffer(file);
+};
+
+document.querySelector("form").onreset = function (e) {
+    e.preventDefault();
+
+    $.thread.request({
+        command: "remove",
+        target: "file",
+        id: $.id,
+        doc: "spend"
+    }, function (e) {
+        switch (this.status) {
+            case 200:
+                parent.location.reload();
+                
+                break;
+            default:
+                showMessage(this);
+            }
+    });
+};
+
+document.getElementById("close").onclick = function (e) {
+    parent.document.body.classList.remove("dialog");
+};
+
+        </script>
+    </body>
+
+</html>

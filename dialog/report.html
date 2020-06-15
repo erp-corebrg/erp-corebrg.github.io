@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+@import "/css/dialog.css";
+
+body,
+input,
+textarea {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+th {
+    width: 120px;
+}
+
+td >select {
+    width: 100%;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+        </style>
+        <script>
+
+function initialize(id, doc, boss) {console.log(arguments);
+    $.request.id = id;
+    $.request.doc = doc;
+
+    $.thread.request({
+        command: "get",
+        target: "user",
+    }, function (e) {
+        switch (this.status) {
+        case 200:
+            const
+                userData = JSON.parse(this.responseText),
+                df = document.createDocumentFragment();
+            var user, option;
+
+            for (let id in userData) {
+                user = userData[id];
+
+                if (user.username === "root") {
+                    continue;
+                }
+
+                option = document.createElement("option");
+
+                option.text = user.name;
+                option.value = id;
+
+                df.appendChild(option);
+            }
+
+            document.getElementById("list").appendChild(df);
+
+            if (boss) {
+                $.request.command = "set";
+
+                document.getElementById("list").value = boss;
+            } else {
+                $.request.command = "add";
+
+                document.getElementById("list").selectedIndex = -1;
+            }
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ xhr.status);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <main>
+            <h2>
+                결재 요청
+                <span class="glyph close" id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <tr>
+                        <th>결재자</th>
+                        <td>
+                            <select id="list" name="boss" required></select>
+                        </td>
+                    </tr>
+                </table>
+                <footer>
+                    <!--input type="reset" value="&#xf2ed; 취소"-->
+                    <input type="submit" value="&#xf00c; 상신">
+                </footer>
+            </form>
+        </main>
+
+        <script src="/js/communicator.js"></script>
+        <script>
+
+const $ = {
+    request: {
+        target: "report"
+    }
+};
+
+try {
+    $.thread = new Thread();
+} catch (e) {
+    top.location.reload();
+
+    throw e;
+}
+
+document.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+    
+    $.request.boss = Number(this.elements["boss"].value);
+
+    $.thread.request($.request, function (e) {
+        switch (this.status) {
+        case 200:
+            parent.location.reload();
+            
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+document.querySelector("form").onreset = function (e) {
+    e.preventDefault();
+
+    $.thread.request({
+        command: "remove",
+        target: "file",
+        id: $.id,
+        doc: "spend"
+    }, function (e) {
+        switch (this.status) {
+            case 200:
+                parent.location.reload();
+                
+                break;
+            default:
+                showMessage(this);
+            }
+    });
+};
+
+document.getElementById("close").onclick = function (e) {
+    parent.document.body.classList.remove("dialog");
+};
+
+        </script>
+    </body>
+
+</html>

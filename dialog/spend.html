@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+@import "/css/dialog.css";
+
+body,
+input,
+textarea {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+th {
+    width: 120px;
+}
+
+td >input[type=text],
+td >input[type=date],
+td >input[type=time],
+td >input[type=number],
+td >select {
+    width: 100%;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+td >input[type=number] {
+    text-align: right;
+}
+
+body.new input[type=reset],
+body:not(.new) input[type=submit]:not(.edit),
+body.new input[type=submit].edit {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function getTimeInMillis(v1, v2) {
+    var date;
+
+    if (v1 && v2) {
+        const ar = v2.split(":");
+
+        date = new Date(v1);
+
+        date.setHours(Number(ar[0]));
+        date.setMinutes(Number(ar[1]), 0, 0);
+    } else {
+        date = new Date();
+    }
+
+    return date.getTime();
+}
+
+function getDateString(d) {
+    var 
+        mm = d.getMonth() +1,
+        dd = d.getDate();
+    
+    return [d.getFullYear(), mm > 9? mm: "0"+ mm, dd > 9? dd: "0"+ dd].join("-");
+}
+
+function getTimeString(d) {
+    const
+        hh = d.getHours(),
+        mm = d.getMinutes();
+
+    return [hh > 9? hh: "0"+ hh, mm > 9? mm: "0"+ mm].join(":");
+}
+
+function initialize(spend) {
+    if (spend) {
+        const form = document.body.querySelector("form");
+
+        form.elements["date"].value = getDateString(new Date(spend.date));
+        form.elements["time"].value = getTimeString(new Date(spend.date));
+        form.elements["type"].value = spend.type;
+        form.elements["target"].value = spend.target;
+        form.elements["amount"].value = spend.amount;
+
+        $.request.command = "set";
+        $.request.id = spend.id;
+    } else {
+        const
+            form = document.body.querySelector("form"),
+            d = new Date();
+
+        form.elements["date"].value = getDateString(d);
+        form.elements["time"].value = getTimeString(d);
+
+        $.request.command = "add";
+        
+        document.body.classList.add("new");
+    }
+}
+
+function showMessage(data) {
+    switch (data.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    case -1:
+        console.trace(e.data.exception);
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ data.status);
+    }
+
+    try {
+        console.log(JSON.parse(data.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <main>
+            <h2>
+                지출결의
+                <span class="glyph close" id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <tr>
+                        <th>날짜</th>
+                        <td>
+                            <input name="date" type="date" required />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>시간</th>
+                        <td>
+                            <input name="time" type="time" required />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>구분</th>
+                        <td>
+                            <select name="type" required>
+                                <option>통신</option>
+                                <option>교통</option>
+                                <option>숙박</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>사용처</th>
+                        <td>
+                            <input name="target" type="text" required />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>금액 (부가세 포함)</th>
+                        <td>
+                            <input name="amount" type="number" required />
+                        </td>
+                    </tr>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; 삭제">
+                    <input type="submit" class="edit" value="&#xf044; 수정">
+                    <input type="submit" value="&#xf0c7; 저장">
+                </footer>
+            </form>
+        </main>
+
+        <script src="/js/md5.js"></script>
+        <script>
+
+const $ = {
+    thread: new Worker("/js/thread.js"),
+    agent: window.localStorage.getItem("agent"),
+    request: {
+        target: "spend"
+    }
+};
+
+if (!$.agent) {
+    throw "";
+}
+
+$.thread.postMessage({
+    action: "initialize",
+    agent: $.agent
+});
+
+document.body.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+
+    $.request.spend = {
+        date: getTimeInMillis(this.elements["date"].value, this.elements["time"].value),
+        type: this.elements["type"].value,
+        target: this.elements["target"].value,
+        amount: Number(this.elements["amount"].value)
+    };
+
+    $.thread.onmessage = e => {
+        switch(e.data.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        default:
+            showMessage(e.data);
+        }
+    };
+
+    $.thread.postMessage({
+        action: "request",
+        request: $.request
+    });
+};
+
+document.body.querySelector("form").onreset = function (e) {
+    e.preventDefault();
+
+    $.request.command = "remove";
+
+    $.thread.onmessage = e => {
+        switch(e.data.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        case 500:
+            alert("Error!\n\n사용자 삭제 실패.");
+
+            break;
+        default:
+            showMessage(e.data);
+        }
+    };
+
+    $.thread.postMessage({
+        action: "request",
+        request: $.request
+    });
+};
+
+document.getElementById("close").onclick = function (e) {
+    parent.document.body.classList.remove("dialog");
+};
+
+        </script>
+    </body>
+
+</html>

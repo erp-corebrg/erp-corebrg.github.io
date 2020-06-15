@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+
+@import "/css/style.css";
+@import "/css/dialog.css";
+@import "/css/fa.css";
+
+        </style>
+        <script>
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <main>
+            <h2>
+                company
+                <span id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>Name</th>
+                            <td>
+                                <input name="name" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>CEO</th>
+                            <td>
+                                <input name="ceo" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Registration</th>
+                            <td>
+                                <input name="id" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Address</th>
+                            <td>
+                                <input name="address" type="text">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; 삭제">
+                    <input type="submit" value="&#xf00c; 확인">
+                </footer>
+                <div class="bg_loading"></div>
+            </form>
+        </main>
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: search.get("id") || undefined,
+        form: document.body.querySelector("form")
+    };
+
+document.getElementById("close").onclick = e =>top.closeDialog();
+
+$.form.onsubmit = function (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: $.id? "set": "add",
+        target: "company",
+        company: {
+            name: this.elements["name"].value,
+            id: this.elements["id"].value,
+            ceo: this.elements["ceo"].value,
+            address: this.elements["address"].value
+        }
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+$.form.onreset = function (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: "remove",
+        target: "company",
+        id: $.id
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        case 500:
+            alert(ERROR_REMOVE_RESTRICT["kr"]);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+function initCompany() {
+    switch(this.status) {
+    case 200:
+        $.company = JSON.parse(this.responseText);
+
+        $.form.elements["name"].value = $.company.name;
+        $.form.elements["id"].value = $.company.id;
+        $.form.elements["address"].value = $.company.address;
+        $.form.elements["ceo"].value = $.company.ceo;
+
+        document.body.classList.add("edit");
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+if ($.id) {
+    $.request.execute({
+        command: "get",
+        target: "company",
+        id: $.id
+    }, initCompany);
+} else {
+    document.body.classList.remove("loading");
+}
+
+        </script>
+    </body>
+
+</html>

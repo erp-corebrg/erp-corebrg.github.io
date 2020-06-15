@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/style.css";
+@import "/css/select.css";
+@import "/css/fa.css";
+
+body {
+    width: 768px; margin: 1em auto;
+    padding: 1em; box-sizing: border-box;
+    border: 1px solid #777777;
+    background-color: #ffffff;
+    z-index: 9;
+}
+
+header {
+    font-size: 2em;
+    user-select: none;
+    display: flex; justify-content: space-between;
+}
+
+h1 {
+    text-align: center;
+}
+
+h3 {
+    text-align: left;
+    border-bottom: 1px solid #777777;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background-color: #34495e;
+    color: #efefef;
+    padding: 0.5em;
+}
+
+tbody tr:not(:last-of-type) th {
+    border-bottom: 1px solid #dddddd;
+}
+
+thead th:not(:last-of-type) {
+    border-right: 1px solid #dddddd;
+}
+
+td.function {
+    font-family: "Font Awesome 5 Free", "맑은 고딕", Arial, Tahoma;
+}
+
+td.save::before {
+    content: "\f0c7";
+}
+
+td.remove::before {
+    content: "\f1f8";
+}
+
+input[type=text],
+input[type=date],
+input[type=number],
+select,
+textarea {
+    padding: 0.5em;
+    box-sizing: border-box;
+    width: 100%; height: 100%;
+}
+
+textarea {
+    resize: none;
+}
+
+.flex {
+    display: flex; align-items: center;
+}
+
+.icon,
+input[type=submit] {
+    font-family: 'Font Awesome 5 Free', Arial, Tahoma;
+}
+
+#company {
+    flex: 1;
+}
+
+#close {
+    font-family: 'Font Awesome 5 Free';
+}
+
+[name=manager] {
+    flex: none;
+    width: initial;
+}
+
+.button.remove,
+#remove {
+    color: #dc3545;
+}
+
+.button.add,
+#save {
+    color: #28a745;
+}
+
+body:not(.edit) section,
+body:not(.edit) #remove {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function getDateString(date) {
+    const
+        m = date.getMonth() +1,
+        d = date.getDate();
+
+    return `${date.getFullYear()}-${m >9? m: "0"+ m}-${d >9? d: "0"+ d}`;
+}
+
+function onSaveItem() {
+    console.log("saved");
+}
+
+function onRemoveItem() {
+    if (!confirm(CONFIRM_REMOVE_ITEM["kr"])) {
+        return;
+    }
+    
+    console.log("removed");
+}
+
+function createItem(data) {
+    const
+        item = document.createElement("tr"),
+        expect = document.createElement("input"),
+        confirm = document.createElement("input"),
+        invoice = document.createElement("input"),
+        amount = document.createElement("input"),
+        save = document.createElement("td"),
+        remove = document.createElement("td");
+
+    item.appendChild(document.createElement("td")).appendChild(expect).type = "date";
+    item.appendChild(document.createElement("td")).appendChild(confirm).type = "date";
+    item.appendChild(document.createElement("td")).appendChild(invoice).type = "text";
+    item.appendChild(document.createElement("td")).appendChild(amount).type = "number";
+    item.appendChild(save).classList.add("save", "function");
+    item.appendChild(remove).classList.add("remove", "function");
+
+    if (data) {
+        if ("expect" in data) {
+            expect.value = data.expect;
+        }
+
+        if ("confirm" in data) {
+            confirm.value = data.confirm;
+        }
+
+        if ("invoice" in data) {
+            invoice.value = data.invoice;
+        }
+
+        if ("amount" in data) {
+            amount.value = data.amount;
+        }
+    }
+
+    save.onclick = onSaveItem;
+    save.title = "Save item";
+
+    remove.onclick = onRemoveItem;
+    remove.title = "Remove item";
+
+    expect.value = getDateString(new Date());
+
+    return item;
+}
+
+function onSave() {
+    const project = {};
+
+    if ([].every.call(document.body.querySelectorAll("[required]"), e => {
+        if (!e.value) {
+            e.focus();
+        } else {
+            if (e.name) {
+                project[e.name] = e.type === "number"? Number(e.value): e.value;
+            }
+
+            return true;
+        }
+    })) {
+        document.body.classList.add("loading");
+
+        $.request.execute({
+            command: $.id? "set": "add",
+            target: "project",
+            id: $.id,
+            project: project
+        }, function (e) {
+            switch (this.status) {
+            case 200:
+                if ($.id) {
+                    document.body.classList.remove("loading");
+                } else {
+                    top.closeDialog(true);
+                }
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    }
+}
+
+function onRemove () {
+    if (!confirm(CONFIRM_REMOVE["kr"])) {
+        return;
+    }
+
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "remove",
+        target: "project",
+        id: $.id,
+    }, function (e) {
+        switch (this.status) {
+        case 200:
+        top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function showMessage (xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <header>
+            <nav>
+                <span title="Save" class="button" id="save">&#xf0c7;</span>
+                <span title="Remove" class="button" id="remove">&#xf1f8;</span>
+            </nav>
+            <span id="close" title="Close Document" class="button">&#xf00d;</span>
+        </header>
+        <h1>수주보고서</h1>
+        <h3>계약 정보</h3>
+        <table>
+            <colgroup>
+                <col width="260">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th>프로젝트 명</th>
+                    <td><input type="text" name="name" required></td>
+                </tr>
+                <tr>
+                    <th>계약금액 (부가세 별도)</th>
+                    <td class="flex">
+                        <input type="number" name="deposit" required>
+                        <input type="text" name="payment" required>
+                    </td>
+                </tr>
+                <tr>
+                    <th>계약 일자</th>
+                    <td>
+                        <input type="date" name="contract" required>
+                    </td>
+                </tr>
+                <tr>
+                    <th>계약 기간</th>
+                    <td class="flex">
+                        <input type="date" name="start" required>
+                        <span class="icon">&#xf337;</span>
+                        <input type="date" name="end" required>
+                    </td>
+                </tr>
+                <tr>
+                    <th>계약 내용</th>
+                    <td>
+                        <textarea rows="10" name="content" required></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <th>고객사</th>
+                    <td class="flex">
+                        <div id="company"></div>
+                        <select name="manager" required></select>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <section>
+            <h3>
+                매출
+                <span class="button add" title="매출 아이템 추가" id="add_sale">&#xf055;</span>
+            </h3>
+            <table>
+                <colgroup>
+                    <col width="160">
+                    <col width="160">
+                    <col width="200">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>예정일</th>
+                        <th>확정일</th>
+                        <th>세금계산서</th>
+                        <th colspan="3">금액</th>
+                    </tr>
+                </thead>
+                <tbody id="list_sale" class="item"></tbody>
+            </table>
+            <h3>
+                매입
+                <span class="button add" title="매입 아이템 추가" id="add_buy">&#xf055;</span>
+            </h3>
+            <table>
+                <colgroup>
+                    <col width="160">
+                    <col width="160">
+                    <col width="160">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>예정일</th>
+                        <th>확정일</th>
+                        <th>세금계산서</th>
+                        <th colspan="3">금액</th>
+                    </tr>
+                </thead>
+                <tbody id="list_buy" class="item"></tbody>
+            </table>
+        </section>
+
+        <div class="bg_loading"></div>
+        <script src="/js/request.js"></script>
+        <script src="/js/select.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: search.get("id") || undefined
+    };
+
+document.getElementById("save").onclick = onSave;
+document.getElementById("remove").onclick = onRemove;
+document.getElementById("close").onclick = e =>top.closeDialog();
+document.getElementById("add_sale").onclick = e => document.getElementById("list_sale").appendChild(createItem());
+document.getElementById("add_buy").onclick = e => document.getElementById("list_buy").appendChild(createItem());
+
+{
+    const select = document.body.querySelector("[name=manager]");
+
+    function initManager(e) {
+        while(select.length > 0) {
+            select.remove(0);
+        }
+
+        switch (this.status) {
+        case 200:
+            const
+                managerData = JSON.parse(this.responseText),
+                df = document.createDocumentFragment();
+            let manager, option;
+
+            for (let id in managerData) {
+                manager = managerData[id];
+
+                option = document.createElement("option");
+                
+                option.text = manager.name;
+                option.value = id;
+
+                df.appendChild(option);
+            }
+
+            select.appendChild(df);
+
+            if ($.project) {
+                select.value = $.project.manager;
+            } else {
+                select.selectedIndex = -1;
+            }
+
+            document.body.classList.remove("loading");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    }
+
+    function resetManager () {
+        document.body.classList.add("loading");
+
+        $.request.execute({
+            command: "get",
+            target: "manager",
+            company: $.select.value
+        }, initManager);
+    }
+}
+
+{    
+    function initCompany(e) {
+        switch (this.status) {
+        case 200:
+            $.select = new Select({
+                id: "company",
+                attr: "name",
+                data: JSON.parse(this.responseText)
+            });
+    
+            $.select.addEventListener("change", resetManager);
+
+            initialize();
+
+            break;
+        default:
+            showMessage(this);
+        }
+    }
+}
+
+function initItem() {
+    switch(this.status) {
+    case 200:
+        const df = document.createDocumentFragment();
+
+        $.itemData = JSON.parse(this.responseText);
+
+        for (let id in $.itemData) {
+            df.appendChild(createItem($.itemData[id]));
+        }
+
+        document.getElementById("list_sale").appendChild(df);
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function initProject () {
+    switch(this.status) {
+    case 200:
+        $.project = JSON.parse(this.responseText);
+
+        document.body.querySelector("[name=name]").value = $.project.name;
+        document.body.querySelector("[name=deposit]").value = $.project.deposit;
+        document.body.querySelector("[name=contract]").value = $.project.contract;
+        document.body.querySelector("[name=start]").value = $.project.start;
+        document.body.querySelector("[name=end]").value = $.project.end;
+        document.body.querySelector("[name=content]").value = $.project.content;
+        document.body.querySelector("[name=payment]").value = $.project.payment;
+        
+        $.select.value = $.project.company;
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function initialize() {
+    if ($.id) {
+        document.body.classList.add("edit");
+
+        $.request.execute({
+            command: "get",
+            target: "project",
+            id: Number($.id)
+        }, initProject);
+    } else {
+        document.body.classList.remove("loading");
+    }   
+}
+
+$.request.execute({
+    command: "get",
+    target: "company"
+}, initCompany);
+
+        </script>
+    </body>
+</html>

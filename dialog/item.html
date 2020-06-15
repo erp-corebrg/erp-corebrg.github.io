@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+@import "/css/dialog.css";
+
+body,
+input,
+textarea {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+th {
+    /*background-color: #5bc0de;
+    color: #fff;*/
+    width: 120px;
+}
+
+td >input[type=text],
+td >textarea {
+    width: 100%;
+    padding: 0.5em;
+    box-sizing: border-box;
+}
+
+textarea {
+    resize: none;
+}
+        </style>
+        <script>
+
+function initialize(item) {
+    if (item) {
+        const form = document.body.querySelector("form");
+
+        form.elements["maker"].value = item.maker;
+        form.elements["name"].value = item.name;
+        form.elements["spec"].value = item.spec;
+
+        $.request.command = "set";
+        $.request.id = item.id;
+    } else {
+        $.request.command = "add";
+        
+        document.body.classList.add("new");
+    }
+}
+
+function showMessage(data) {
+    switch (data.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    case -1:
+        console.trace(e.data.exception);
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ data.status);
+    }
+
+    try {
+        console.log(JSON.parse(data.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <main>
+            <h2>
+                아이템
+                <span class="glyph close" id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <tr>
+                        <th>제조사</th>
+                        <td>
+                            <input name="maker" type="text" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>품명</th>
+                        <td>
+                            <input name="name" type="text" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>규격</th>
+                        <td>
+                            <textarea name="spec" rows="8"></textarea>
+                        </td>
+                    </tr>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; 삭제">
+                    <input type="submit" value="&#xf00c; 적용">
+                </footer>
+            </form>
+        </main>
+        <script>
+
+const $ = {
+    thread: new Worker("/js/thread.js"),
+    agent: window.localStorage.getItem("agent"),
+    request: {
+        target: "item"
+    }
+};
+
+if (!$.agent) {
+    throw "";
+}
+
+$.thread.postMessage({
+    action: "initialize",
+    agent: $.agent
+});
+
+document.body.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+
+    $.request.item = {
+        maker: this.elements["maker"].value,
+        name: this.elements["name"].value,
+        spec: this.elements["spec"].value
+    };
+
+    $.thread.onmessage = e => {
+        switch(e.data.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        default:
+            showMessage(e.data);
+        }
+    };
+
+    $.thread.postMessage({
+        action: "request",
+        request: $.request
+    });
+};
+
+document.body.querySelector("form").onreset = function (e) {
+    e.preventDefault();
+
+    $.request.command = "remove";
+
+    $.thread.onmessage = e => {
+        switch(e.data.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        default:
+            showMessage(e.data);
+        }
+    };
+
+    $.thread.postMessage({
+        action: "request",
+        request: $.request
+    });
+};
+
+document.getElementById("close").onclick = function (e) {
+    parent.document.body.classList.remove("dialog");
+};
+
+        </script>
+    </body>
+
+</html>

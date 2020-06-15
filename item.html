@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+
+body {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    display: flex; flex-direction: column;
+}
+
+body, input {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+header {
+    flex: none;
+    padding: 1em;
+    border-bottom: 1px solid #777777;
+}
+
+main {
+    flex: 1;
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+col:nth-child(1),
+col:nth-child(2) {
+    width: 300px;
+}
+
+thead tr {
+    height: 4em;
+}
+
+td,
+th {
+    border: 1px solid #ddd;
+    padding: 0.5em;
+}
+
+th {
+    background-color: #337ab7;
+    color: #ffffff;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #dddddd;
+    cursor: pointer;
+}
+
+iframe {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    border: none;
+    padding: 0; margin: 0;
+    width: 100%; height: 100%;
+}
+
+.glyph {
+    font-family: 'Font Awesome 5 Free';
+}
+
+.button {
+    display: inline-block;
+    line-height: 2em;
+    padding: 0 1em 0 4em;
+    vertical-align: middle;
+    border: 1px solid transparent;
+    color: #ffffff;
+    position: relative;
+    cursor: pointer;
+}
+
+.button::after {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 3em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0,0,0,0.15);
+}
+
+.button.add {
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+}
+
+.button.add:hover,
+.button.add:focus {
+    background-color: #47a447;
+    border-color: #398439;
+}
+
+.button.add::after {
+    content: "\f067";
+}
+
+.button.remove {
+    background-color: #d9534f;
+    border-color: #d43f3a;
+}
+
+.button.remove:hover,
+.button.remove:focus {
+    background-color: #d2322d;
+    border-color: #ac2925;
+}
+
+.button.remove::after {
+    content: "\f2ed";
+}
+
+body:not(.dialog) #dialog {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function addItem(item) {
+    const
+        tr = document.createElement("tr"),
+        maker = document.createElement("td"),
+        name = document.createElement("td"),
+        spec = document.createElement("td");
+
+    tr.appendChild(maker).textContent = item.maker;
+    tr.appendChild(name).textContent = item.name;
+    tr.appendChild(spec).innerHTML = item.spec.replace(/\r?\n/g, "<br>");
+
+    tr.dataset.id = item.id;
+
+    tr.onclick = onSelectItem;
+
+    return tr;
+}
+
+function onSelectItem(e) {
+    showDialog($.itemData[this.dataset.id]);
+}
+
+function showDialog(item) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(item);
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/item.html";
+}
+
+function showMessage(data) {
+    switch (data.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    case -1:
+        console.trace(e.data.exception);
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ data.status);
+    }
+
+    try {
+        console.log(JSON.parse(data.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <header>
+            <span class="glyph button add" id="add">아이템 추가</span>
+            <span class="glyph button remove">아이템 삭제</span>
+        </header>
+        <main>
+            <table>
+                <colgroup>
+                    <col>
+                    <col>
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>제조사</th>
+                        <th>품명</th>
+                        <th>규격</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </main>
+        <iframe id="dialog"></iframe>
+        <script>
+
+const $ = {
+    thread: new Worker("/js/thread.js"),
+    agent: window.localStorage.getItem("agent"),
+    list: document.getElementById("list")
+}
+
+if (!$.agent) {
+    window.location.replace("/connect.html");
+
+    throw "";
+}
+
+$.thread.postMessage({
+    action: "initialize",
+    agent: $.agent
+});
+
+$.thread.onmessage = e => {
+    switch (e.data.status) {
+    case 200:
+        const df = document.createDocumentFragment();
+
+        $.itemData = JSON.parse(e.data.responseText);
+
+        for (let id in $.itemData) {
+            df.appendChild(addItem($.itemData[id]));
+        }
+
+        $.list.appendChild(df);
+
+        break;
+    default:
+        showMessage(e.data);
+    }
+};
+
+document.getElementById("add").onclick = function (e) {
+    showDialog();
+};
+
+$.thread.postMessage({
+    action: "request",
+    request: {
+        command: "get",
+        target: "item"
+    }
+});
+
+        </script>
+    </body>
+
+</html>

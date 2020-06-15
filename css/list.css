@@ -1,0 +1,52 @@
+@charset "utf-8";
+
+body {
+	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+	margin: 0; padding: 1em;
+    display: flex; flex-direction: column;
+}
+
+header {
+    flex: none;
+	padding: 1em;
+	display: flex;
+    justify-content: space-between;
+    user-select: none;
+}
+
+main {
+    flex: 1;
+    overflow-y: auto;
+}
+
+table {
+    table-layout: fixed;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+tbody tr {
+    border-bottom: 1px solid #ffffff;
+    cursor: pointer;
+}
+
+th {
+    background-color: #34495e;
+    color: #efefef;
+    position: sticky; top: 0;
+}
+
+th:not(:last-of-type) {
+    border-right: 1px solid rgba(52, 73, 94, 0.8);
+}
+
+th,
+td {
+    padding: 1em;
+    box-sizing: border-box;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+tr:nth-child(odd) {
+	background-color: #ebebeb;
+}

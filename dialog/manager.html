@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+
+@import "/css/style.css";
+@import "/css/dialog.css";
+@import "/css/select.css";
+@import "/css/fa.css";
+
+        </style>
+        <script>
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <main>
+            <h2>
+                Manager
+                <span id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>Name</th>
+                            <td>
+                                <input name="name" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Company</th>
+                            <td>
+                                <div id="company"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Mobile</th>
+                            <td>
+                                <input name="mobile" type="text">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>
+                                <input name="email" type="text">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; Remove">
+                    <input type="submit" value="&#xf00c; Apply">
+                </footer>
+                <div class="bg_loading"></div>
+            </form>
+        </main>
+        <script src="/js/request.js"></script>
+        <script src="/js/select.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: search.get("id") || undefined,
+        form: document.body.querySelector("form")
+    };
+
+document.getElementById("close").onclick = e =>top.closeDialog();
+
+$.form.onsubmit = function (e) {
+    e.preventDefault();
+
+    const company = $.select.value;
+
+    if (!company) {
+        return;
+    }
+
+    $.request.execute({
+        command: $.id? "set": "add",
+        target: "manager",
+        id: $.id,
+        manager: {
+            name: this.elements["name"].value,
+            company: company,
+            mobile: this.elements["mobile"].value,
+            email: this.elements["email"].value
+        }
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+$.form.onreset = function (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: "remove",
+        target: "manager",
+        id: $.id
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+function initManager() {
+    switch(this.status) {
+    case 200:
+        $.manager = JSON.parse(this.responseText);
+
+        $.form.elements["name"].value = $.manager.name;
+        $.form.elements["mobile"].value = $.manager.mobile;
+        $.form.elements["email"].value = $.manager.email;
+
+        $.select.value = $.manager.company;
+
+        document.body.classList.add("edit");
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function initCompany() {
+    switch(this.status) {
+    case 200:
+        $.select = new Select({
+            id: "company",
+            attr: "name",
+            data: JSON.parse(this.responseText)
+        });
+        
+        if ($.id) {
+            $.request.execute({
+                command: "get",
+                target: "manager",
+                id: $.id
+            }, initManager);
+        } else {
+            document.body.classList.remove("loading");
+        }
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+$.request.execute({
+    command: "get",
+    target: "company",
+}, initCompany);
+
+
+        </script>
+    </body>
+
+</html>

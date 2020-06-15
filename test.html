@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+
+body {
+    font: 20pt "궁서", Tahoma;
+}
+
+input,select,button,textarea {
+    font-family: "Font Awesome 5 Free";
+}
+        </style>
+        <script>
+		</script>
+    </head>
+    <body>
+    <div>테스트</div>
+    <div>Test</div>
+    <button>버튼</button>
+    <input type="button" value="Test">
+    <label>라벨</label>
+    <select>
+        <option>옵션1</option>
+        <option>옵션2</option>
+        <option>Option</option>
+    </select>
+    <form>
+        <input type="button" id="test" value="Test">
+        <select>
+            <option>옵션1</option>
+            <option>옵션2</option>
+            <option>Option</option>
+        </select>
+        <button>버튼</button>
+        <input type="submit">
+        <fieldset>
+            <legend>레전드</legend>
+        </fieldset>
+    </form>
+    <fieldset>
+        <legend>레전드</legend>
+    </fieldset>
+        <script>
+
+document.getElementById("test").value = "\uf002";
+
+function Test() {
+
+}
+
+Test.prototype = {
+    set test (str) {
+        this.a = str;
+    },
+    f1: function () {
+        console.log(this.a);
+    }
+};
+
+var t = new Test();
+
+t.test = "good";
+
+t.f1();
+        </script>
+    </body>
+
+</html>

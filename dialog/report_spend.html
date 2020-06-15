@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+@import "/css/dialog.css";
+
+body {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+th {
+    width: 120px;
+}
+
+th, td {
+    padding: 0.5em;
+}
+
+td >input[type=number] {
+    text-align: right;
+}
+
+#file {
+    height: 50px;
+    display: flex; justify-content: center; align-items: center;
+    border: 2px dotted #777777;
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+#file:empty::before {
+    content: "첨부된 파일 없음.";
+    color: #777777;
+    font-weight: normal;
+    font-size: initial;
+}
+        </style>
+        <script>
+
+function initialize(report) {
+    $.thread.request({
+        command: "get",
+        target: "spend",
+        id: report.docID
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            const spend = JSON.parse(this.responseText);
+
+            document.getElementById("date").textContent = new Date(spend.date).toLocaleString();
+            document.getElementById("type").textContent = spend.type;
+            document.getElementById("target").textContent = spend.target;
+            document.getElementById("amount").textContent = spend.amount;
+
+            $.request.id = spend.id;
+
+            if (spend.file) {
+                const file = document.getElementById("file");
+
+                file.textContent = spend.file;
+                file.onclick = function (e) {
+                    $.thread.download(spend.id, "spend", spend.file, function (e) {
+                        switch (this.status) {
+                        case 200:
+                            break;
+                        default:
+                            showMessage(this);
+                        }
+                    })
+                }
+            }
+
+            break;
+        case 500:
+            alert("Error!\n\n"+ "서버 오류.");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ xhr.status);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <main>
+            <h2>
+                지출결의
+                <span class="glyph close" id="close" title="대화창 닫기">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <tr>
+                        <th>날짜</th>
+                        <td id="date"></td>
+                    </tr>
+                    <tr>
+                        <th>구분</th>
+                        <td id="type"></td>
+                    </tr>
+                    <tr>
+                        <th>사용처</th>
+                        <td id="target"></td>
+                    </tr>
+                    <tr>
+                        <th>금액 (부가세 포함)</th>
+                        <td id="amount"></td>
+                    </tr>
+                </table>
+                <div id="file"></div>
+                <footer>
+                    <input type="reset" value="&#xf0ab; 반려">
+                    <input type="submit" value="&#xf00c; 전결">
+                </footer>
+            </form>
+        </main>
+
+        <script src="/js/communicator.js"></script>
+        <script src="/js/md5.js"></script>
+        <script>
+
+const $ = {
+        request: {
+            target: "report",
+            doc: "spend"
+        }
+    };
+
+try {
+    $.thread = new Thread();
+} catch (e) {
+    top.location.reload();
+
+    throw e;
+}
+
+document.getElementById("close").onclick = function (e) {
+    parent.document.body.classList.remove("dialog");
+};
+
+document.body.querySelector("form").onsubmit = function (e) {
+    e.preventDefault();
+
+    const password = window.prompt("비밀번호 입력.");
+
+    if (!password) {
+        return;
+    }
+
+    $.request.command = "set";
+    $.request.password = hex_md5(password);
+
+    $.thread.request($.request,
+    function (e) {
+        switch (this.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        case 403:
+            alert("Error!\n\n문서 결재 실패.");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+document.body.querySelector("form").onreset = function (e) {
+    e.preventDefault();
+
+    $.request.command = "remove";
+
+    $.thread.request($.request,
+    function (e) {
+        switch (this.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        case 500:
+            alert("Error!\n\n문서 반려 실패.");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+};
+
+        </script>
+    </body>
+
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+
+body {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    display: flex; flex-direction: column;
+}
+
+body, input {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+header {
+    flex: none;
+    padding: 1em;
+    border-bottom: 1px solid #777777;
+}
+
+main {
+    flex: 1;
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+col:nth-child(1),
+col:nth-child(2) {
+    width: 300px;
+}
+
+thead tr {
+    height: 3em;
+}
+
+td,
+th {
+    border: 1px solid #ddd;
+    padding: 0.5em;
+}
+
+th {
+    background-color: #337ab7;
+    color: #ffffff;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #dddddd;
+    cursor: pointer;
+}
+
+th:last-of-type,
+td:last-of-type {
+    width: 3em;
+    text-align: center;
+}
+
+td:last-of-type::before {
+    font-family: "Font Awesome 5 Free";
+}
+
+td:last-of-type:hover::before {
+    content: "\f35b";
+}
+
+iframe {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    border: none;
+    padding: 0; margin: 0;
+    width: 100%; height: 100%;
+}
+
+.glyph {
+    font-family: 'Font Awesome 5 Free';
+}
+
+.button {
+    display: inline-block;
+    line-height: 2em;
+    padding: 0 1em 0 4em;
+    vertical-align: middle;
+    border: 1px solid transparent;
+    color: #ffffff;
+    position: relative;
+    cursor: pointer;
+}
+
+.button::after {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 3em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0,0,0,0.15);
+}
+
+.button.add {
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+}
+
+.button.add:hover,
+.button.add:focus {
+    background-color: #47a447;
+    border-color: #398439;
+}
+
+.button.add::after {
+    content: "\f067";
+}
+
+.button.remove {
+    background-color: #d9534f;
+    border-color: #d43f3a;
+}
+
+.button.remove:hover,
+.button.remove:focus {
+    background-color: #d2322d;
+    border-color: #ac2925;
+}
+
+.button.remove::after {
+    content: "\f2ed";
+}
+
+body:not(.dialog) #dialog {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function rename(name) {
+    switch (name) {
+    case "spend":
+        return "지출결의";
+    default:
+        return name;
+    }
+}
+
+function onReport(e) {
+    e.stopPropagation();
+
+    const
+        dialog = document.getElementById("dialog");
+        report = $.reportData[this.parentNode.dataset.id];
+console.log(report);
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(report.docID, report.docName, report.boss);
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/report.html";
+}
+
+function addItem(report) {
+    const
+        tr = document.createElement("tr"),
+        docName = document.createElement("td"),
+        userName = document.createElement("td");
+
+    tr.appendChild(docName).textContent = rename(report.docName);
+    tr.appendChild(userName).textContent = report.userName;
+
+    tr.dataset.id = report.id;
+
+    tr.onclick = onSelectItem;
+
+    tr.appendChild(document.createElement("td")).onclick = onReport;
+
+    return tr;
+}
+
+function onSelectItem(e) {
+    showDialog($.reportData[this.dataset.id]);
+}
+
+function showDialog(report) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(report);
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/report_"+report.docName+".html";
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        break;
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ xhr.status);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <main>
+            <table>
+                <thead>
+                    <tr>
+                        <th>문서</th>
+                        <th>작성자</th>
+                        <th>상신</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </main>
+        <iframe id="dialog"></iframe>
+    
+        <script src="/js/communicator.js"></script>
+        <script>
+
+const $ = {
+    list: document.getElementById("list")
+};
+
+try {
+    $.thread = new Thread();
+} catch (e) {
+    top.location.reload();
+
+    throw e;
+}
+
+$.thread.request({
+    command: "get",
+    target: "report"
+}, function (e) {
+    switch (this.status) {
+    case 200:
+        const df = document.createDocumentFragment();
+
+        $.reportData = JSON.parse(this.responseText);
+
+        for (let id in $.reportData) {
+            df.appendChild(addItem($.reportData[id]));
+        }
+        
+        $.list.appendChild(df);
+
+        break;
+    default:
+        showMessage(this);
+    }
+});
+
+        </script>
+    </body>
+
+</html>

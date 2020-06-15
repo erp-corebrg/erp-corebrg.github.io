@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		
+		<title>CeRP</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/fa.css";
+
+table {
+    width: 100%;
+    table-layout: fixed;
+    /*border-collapse: collapse;*/
+}
+
+thead {
+    background-color: #34495e;
+    color: #efefef;
+    position: sticky; top: 0;
+}
+
+thead th:not(:last-of-type) {
+    border-right: 1px solid rgba(52, 73, 94, 0.8);
+}
+
+th, td {
+    padding: 0.5em;
+}
+
+td {
+    text-align: right;
+}
+		</style>		
+		<script>
+
+function initProject () {
+    switch (this.status) {
+    case 200:
+        parseProject(JSON.parse(this.responseText));
+        
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function parseProject(prjData) {
+    const df = document.createDocumentFragment();
+    var
+        total = 0,
+        project,
+        year,
+        map = {};
+
+    for (let id in prjData) {
+        project = prjData[id];
+
+        total += project.deposit;
+
+        year = project.contract.split("-")[0];
+
+        if (!(year in map)) {
+            map[year] = 0;
+        }
+
+        map[year] += project.deposit;
+    }
+
+    df.appendChild(createItem("합계", total));
+
+    for (let year in map) {
+        df.appendChild(createItem(year, map[year]));
+    }
+    
+    document.getElementById("table").appendChild(df);
+}
+
+function createItem (title, deposit) {
+    const
+        tr = document.createElement("tr");
+    
+    tr.appendChild(document.createElement("th")).textContent = title;
+    tr.appendChild(document.createElement("td")).textContent = deposit.toLocaleString();
+    tr.appendChild(document.createElement("td"));
+    tr.appendChild(document.createElement("td"));
+
+    return tr;
+}
+
+function showMessage (xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+		
+	</head>
+	
+	<body class="loading">
+		<table>
+            <thead>
+                <tr>
+                    <th rowspan="2"></th>
+                    <th colspan="2">매출</th>
+                    <th rowspan="2">매입</th>
+                </tr>
+                <tr>
+                    <th>계획</th>
+                    <th>확정</th>
+                </tr>
+            </thead>
+            <tbody id="table"></tbody>
+        </table>
+        <div class="bg_loading"></div>
+        
+		<script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+		<script>
+
+const $ = {
+        request: new Request(),
+    };
+
+document.body.classList.remove("loading");
+
+$.request.execute({
+    command: "get",
+    target: "project"
+}, initProject);
+
+        </script>
+	
+	</body>
+	
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/fa.css";
+
+body {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    display: flex; flex-direction: column;
+}
+
+body, input {
+    font: 10pt "맑은 고딕", Tahoma, Arial;
+}
+
+header {
+    flex: none;
+    padding: 1em;
+    border-bottom: 1px solid #777777;
+}
+
+main {
+    flex: 1;
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead tr {
+    height: 3em;
+}
+
+td,
+th {
+    border: 1px solid #ddd;
+    padding: 0.5em;
+}
+
+th {
+    background-color: #337ab7;
+    color: #ffffff;
+}
+
+td:nth-of-type(5),
+td:nth-of-type(6) {
+    width: 3em;
+    text-align: center;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #dddddd;
+    cursor: pointer;
+}
+
+td:nth-of-type(5)::before,
+td:nth-of-type(6)::before {
+    font-family: "Font Awesome 5 Free";
+}
+
+td:nth-of-type(5).checked::before {
+    content: "\f00c";
+    color: #5cb85c;
+}
+
+tr:hover td:nth-of-type(5)::before {
+    content: "\f0c6";
+}
+
+tr:hover td:nth-of-type(6)::before {
+    content: "\f35b";
+}
+
+iframe {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    border: none;
+    padding: 0; margin: 0;
+    width: 100%; height: 100%;
+}
+
+.glyph {
+    font-family: "Font Awesome 5 Free";
+}
+
+.button {
+    display: inline-block;
+    line-height: 2em;
+    padding: 0 1em 0 4em;
+    vertical-align: middle;
+    border: 1px solid transparent;
+    color: #ffffff;
+    position: relative;
+    cursor: pointer;
+}
+
+.button::after {
+    position: absolute; top: 0; bottom: 0; left: 0; width: 3em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0,0,0,0.15);
+}
+
+.button.add {
+    background-color: #5cb85c;
+    border-color: #4cae4c;
+}
+
+.button.add:hover,
+.button.add:focus {
+    background-color: #47a447;
+    border-color: #398439;
+}
+
+.button.add::after {
+    content: "\f067";
+}
+
+body:not(.dialog) #dialog {
+    display: none;
+}
+
+        </style>
+        <script>
+
+function addItem(spend) {
+    const
+        tr = document.createElement("tr"),
+        date = document.createElement("td"),
+        type = document.createElement("td"),
+        target = document.createElement("td"),
+        amount = document.createElement("td"),
+        attach = document.createElement("td"),
+        report = document.createElement("td");
+
+    tr.appendChild(date).textContent = new Date(spend.date).toLocaleString();
+    tr.appendChild(type).textContent = spend.type;
+    tr.appendChild(target).textContent = spend.target;
+    tr.appendChild(amount).textContent = spend.amount;
+    tr.appendChild(attach);
+    tr.appendChild(report);
+
+    tr.dataset.id = spend.id;
+
+    tr.onclick = onSelectItem;
+    attach.onclick = onAttachFile;
+    report.onclick = onReport;
+
+    if (spend.file) {
+        attach.classList.add("checked");
+    }
+
+    return tr;
+}
+
+function onSelectItem(e) {
+    showDialog($.spendData[this.dataset.id]);
+}
+
+function onReport(e) {
+    e.stopPropagation();
+
+    const
+        dialog = document.getElementById("dialog");
+        id = Number(this.parentNode.dataset.id);
+
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(id, "spend");
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/report.html";
+}
+
+function onAttachFile(e) {
+    e.stopPropagation();
+
+    const
+        dialog = document.getElementById("dialog");
+        id = Number(this.parentNode.dataset.id);
+
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(id);
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/upload.html";
+}
+
+function showDialog(spend) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(spend);
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/spend.html";
+}
+
+function showMessage(data) {
+    switch (data.status) {
+    case 401:
+        alert("Notice!\n\n"+ "세션 만료.");
+
+        top.location.reload();
+        
+        break;
+    case 403:
+        alert("Notice!\n\n"+ "권한 없음.");
+
+        break;
+    case -1:
+        console.trace(e.data.exception);
+    default:
+        alert("Error!\n\n"+ "오류코드: "+ data.status);
+    }
+
+    try {
+        console.log(JSON.parse(data.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <header>
+            <span class="glyph button add" id="add">작성</span>
+        </header>
+        <main>
+            <table>
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>구분</th>
+                        <th>사용처</th>
+                        <th>금액 (부가세 포함)</th>
+                        <th>첨부</th>
+                        <th>상신</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </main>
+        <iframe id="dialog"></iframe>
+        <script>
+
+const $ = {
+    thread: new Worker("/js/thread.js"),
+    agent: window.localStorage.getItem("agent")
+}
+
+if (!$.agent) {
+    top.location.reload();
+
+    throw "";
+}
+
+$.thread.postMessage({
+    action: "initialize",
+    agent: $.agent
+});
+
+$.thread.onmessage = e => {
+    switch (e.data.status) {
+    case 200:
+        const
+            list = document.getElementById("list"),
+            df = document.createDocumentFragment();
+
+        $.spendData = JSON.parse(e.data.responseText);
+
+        for (let id in $.spendData) {
+            df.appendChild(addItem($.spendData[id]));
+        }
+
+        list.appendChild(df);
+
+        break;
+    default:
+        showMessage(e.data);
+    }
+};
+
+document.getElementById("add").onclick = function (e) {
+    showDialog();
+};
+
+$.thread.postMessage({
+    action: "request",
+    request: {
+        command: "get",
+        target: "spend"
+    }
+});
+
+        </script>
+    </body>
+
+</html>
