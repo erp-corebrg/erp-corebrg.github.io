@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeRP</title>
+        <style>
+@import "/css/style.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    margin: 0; padding: 0;
+    background: #f9f9f9 url("/img/bg_signin.png") fixed center no-repeat;
+}
+
+#dialog {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 3;
+}
+
+section {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+header {
+    position: absolute; top: 0; right: 0; left: 0; height: 50px;
+    display: flex; align-items: center; justify-content:  space-between;
+    background-color: #1e1f26;
+    color: #ffffff;
+    font-weight: bold;
+    z-index: 2;
+}
+
+nav {
+    position: absolute; top: 50px; bottom: 0; left: 0; width: 300px;
+    padding: 1em; box-sizing: border-box;
+    border-right: 1px solid #dddddd;
+}
+
+main {
+    position: absolute; top: 50px; right: 0; bottom: 0; left: 300px;
+    box-sizing: border-box;
+}
+
+iframe {
+    width: 100%; height: 100%;
+    border: none;
+}
+
+ul {
+    list-style: none;
+    padding: 1em; margin: 0;
+}
+
+nav > ul >li {
+    text-align: center;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #34495e;
+}
+
+nav label {
+    display: block;
+    padding: 1em;
+}
+
+nav li >ul {
+    background-color: #ffffff;
+    color: initial;
+}
+
+nav li >ul >li {
+    padding: 0.5em;
+
+}
+
+nav li >ul >li:not(:last-child) {
+    border-bottom: 1px solid #34495e;
+}
+
+a,
+a:link,
+a:focus,
+a:visited {
+    color: inherit;
+    text-decoration: none;
+}
+
+details {
+    position: relative;
+    display: inline-block;
+}
+
+details[open] summary::before {
+    content: "";
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    background-color: transparent;
+}
+
+summary {
+    outline: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+.popup {
+    position: absolute; top: 100%; right: 0;
+    border-radius: 3px;
+    border: 1px solid rgba(27,31,35,.15);
+    box-shadow: 0 1px 15px rgba(27,31,35,.15);
+    width: 160px;
+    padding: 1em 0;
+    margin-top: 8px;
+    background-color: #ffffff;
+    color: #24292e;
+    z-index: 1;
+}
+
+.popup::after {
+    position: absolute; top: -14px; right: 10px; left: auto;
+    display: inline-block;
+    content: "";
+    border: 7px solid transparent;
+    border-bottom-color: #fff;
+}
+
+.popup li {
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.popup li:hover {
+    background-color: #0366d6;
+    color: #ffffff;
+}
+
+#user {
+    cursor: pointer;
+    padding: 0.5em;
+}
+
+.hidden,
+body.authorized section.signin,
+body:not(.authorized) section.erp,
+body:not(.loading) .bg_loading,
+body:not(.dialog) #dialog,
+body:not(.root) li.root {
+	display: none;
+}
+
+        </style>
+        <script>
+
+function showDialog(src) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function () {
+		document.body.classList.add("dialog");
+	};
+
+    dialog.src = src;
+}
+
+function closeDialog(reset) {
+    document.body.classList.remove("dialog");
+    
+    if (reset) {
+        resetDialog();
+    }
+}
+
+function resetDialog() {
+    document.querySelector("[name=content]").contentWindow.location.reload();
+}
+
+function signIn (account) {
+    $.request = new Request();
+
+    window.account = account;
+
+    document.getElementById("user").textContent = account.username;
+
+    document.getElementById("signout").onclick = onSignOut;
+
+    if (account.level === 0) {
+        document.body.classList.add("root");
+    }
+
+    document.body.classList.add("authorized");
+}
+
+function onSignOut() {
+    if (!confirm(CONFIRM_SIGNOUT["kr"])) {
+        return;
+    }
+
+    $.request.execute({
+        command: "signout"
+    }, function () {
+        window.location.reload();
+    });
+}
+
+		</script>
+    </head>
+    <body>
+        <section class="erp">
+            <header>
+                <ul></ul>
+                <ul>
+                    <details>
+                        <summary id="user"></summary>
+                        <ul class="popup">
+                            <li id="password"><a href="/password.html" target="content">Password</a></li>
+                            <li id="signout">Sign out</li>
+                        </ul>
+                    </details>
+                </ul>
+            </header>
+            <nav>
+                <ul>
+                    <li class="hidden">
+                        <a href="/spend.html" target="content">지출 결의</a>
+                    </li>
+                    <li class="root">
+                        <label>수주 관리</label>
+                        <ul>
+                            <li>
+                                <a href="/list/order.html" target="content">수주 보고</a>
+                            </li>
+                            <li>
+                                <a href="/statistic.html" target="content">통계</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="root">
+                        <label>고객 관리</label>
+                        <ul>
+                            <li>
+                                <a href="list/company.html" target="content"">기업</a>
+                            </li>
+                            <li>
+                                <a href="list/manager.html" target="content"">담당자</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="root hidden">
+                        <a href="/item.html" target="content"">아이템 관리</a>
+                    </li>
+                    
+                    <li class="root hidden">
+                        <a href="/user.html" target="content"">사용자 관리</a>
+                    </li>
+                    <li class="root hidden">
+                        <a href="/file.html" target="content"">파일</a>
+                    </li>
+                    <li class="hidden">
+                        <a href="/report.html" target="content"">결재 요청</a>
+                    </li>
+                </ul>
+            </nav>
+            <main>
+                <iframe name="content"></iframe>
+            </main>
+            <iframe id="dialog"></iframe>
+        </section>
+        <section class="signin">
+            <iframe src="/connect.html"></iframe>
+        </section>
+        
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+const $ = {};
+
+document.getElementById("password").onclick = e => document.querySelector("details").removeAttribute("open");
+
+        </script>
+    </body>
+</html>
