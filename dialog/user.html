@@ -74,22 +74,21 @@ function onSubmit (e) {
 function onReset (e) {
     e.preventDefault();
 
-    $.request.command = "remove";
-
-    $.thread.onmessage = e => {
+    document.body.classList.add("loading");
+    
+    $.request.execute({
+        command: "remove",
+        target: "user",
+        id: $.id
+    }, function () {
         switch(this.status) {
         case 200:
-            parent.location.reload();
+            top.closeDialog(true);
 
             break;
         default:
             showMessage(this);
         }
-    };
-
-    $.thread.postMessage({
-        action: "request",
-        request: $.request
     });
 }
 

@@ -124,62 +124,102 @@ function getDateString(date) {
     return `${date.getFullYear()}-${m >9? m: "0"+ m}-${d >9? d: "0"+ d}`;
 }
 
-function onSaveItem() {
-    console.log("saved");
+function onSaveInvoice() {
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "set",
+        target: "invoice",
+        id: Number(this.dataset.id),
+        invoice: {
+            expect: this.children[0].querySelector("input").value || undefined,
+            issue: this.children[1].querySelector("input").value || undefined,
+            complete: this.children[2].querySelector("input").value || undefined,
+            amount: this.children[3].querySelector("input").value || 0
+        }
+    }, function () {
+        switch (this.status) {
+        case 200:
+            alert(INFO_REQUEST_COMPLETE["kr"]);
+
+            break;
+        default:
+            showMessage(this);
+        }
+
+        document.body.classList.remove("loading");
+    });
 }
 
-function onRemoveItem() {
-    if (!confirm(CONFIRM_REMOVE_ITEM["kr"])) {
+function onRemoveInvoice() {
+    if (!confirm(CONFIRM_REMOVE["kr"])) {
         return;
     }
     
-    console.log("removed");
+    const tr = this;
+
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: "remove",
+        target: "invoice",
+        id: Number(this.dataset.id)
+    }, function () {
+        switch (this.status) {
+        case 200:
+            tr.parentNode.removeChild(tr);
+
+            alert(INFO_REQUEST_COMPLETE["kr"]);
+
+            break;
+        default:
+            showMessage(this);
+        }
+
+        document.body.classList.remove("loading");
+    });
 }
 
-function createItem(data) {
+function createItem(invoice) {
     const
-        item = document.createElement("tr"),
+        tr = document.createElement("tr"),
         expect = document.createElement("input"),
-        confirm = document.createElement("input"),
-        invoice = document.createElement("input"),
+        complete = document.createElement("input"),
+        issue = document.createElement("input"),
         amount = document.createElement("input"),
         save = document.createElement("td"),
         remove = document.createElement("td");
 
-    item.appendChild(document.createElement("td")).appendChild(expect).type = "date";
-    item.appendChild(document.createElement("td")).appendChild(confirm).type = "date";
-    item.appendChild(document.createElement("td")).appendChild(invoice).type = "text";
-    item.appendChild(document.createElement("td")).appendChild(amount).type = "number";
-    item.appendChild(save).classList.add("save", "function");
-    item.appendChild(remove).classList.add("remove", "function");
+    tr.appendChild(document.createElement("td")).appendChild(expect).type = "date";
+    tr.appendChild(document.createElement("td")).appendChild(issue).type = "date";
+    tr.appendChild(document.createElement("td")).appendChild(complete).type = "date";
+    tr.appendChild(document.createElement("td")).appendChild(amount).type = "number";
+    tr.appendChild(save).classList.add("save", "function");
+    tr.appendChild(remove).classList.add("remove", "function");
 
-    if (data) {
-        if ("expect" in data) {
-            expect.value = data.expect;
-        }
+    amount.value = invoice.amount;
 
-        if ("confirm" in data) {
-            confirm.value = data.confirm;
-        }
-
-        if ("invoice" in data) {
-            invoice.value = data.invoice;
-        }
-
-        if ("amount" in data) {
-            amount.value = data.amount;
-        }
+    if ("expect" in invoice) {
+        expect.value = invoice.expect;
     }
 
-    save.onclick = onSaveItem;
+    if ("issue" in invoice) {
+        issue.value = invoice.issue;
+    }
+
+    if ("complete" in invoice) {
+        complete.value = invoice.complete;
+    }
+
+    save.onclick = onSaveInvoice.bind(tr);
     save.title = "Save item";
 
-    remove.onclick = onRemoveItem;
+    remove.onclick = onRemoveInvoice.bind(tr);
     remove.title = "Remove item";
 
-    expect.value = getDateString(new Date());
+    tr.dataset.id = invoice.id;
 
-    return item;
+    return tr;
 }
 
 function onSave() {
@@ -234,7 +274,53 @@ function onRemove () {
     }, function (e) {
         switch (this.status) {
         case 200:
-        top.closeDialog(true);
+            top.closeDialog(true);
+
+            break;
+        case 500:
+            alert(ERROR_REMOVE_RESTRICT["kr"]);
+        
+            document.body.classList.remove("loading");
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function onAddSale() {
+    $.request.execute({
+        command: "add",
+        target: "invoice",
+        invoice: {
+            type: 1,
+            project: $.id
+        }
+    }, function () {
+        switch (this.status) {
+        case 200:
+            window.location.reload();
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function onAddBuy() {
+    $.request.execute({
+        command: "add",
+        target: "invoice",
+        invoice: {
+            type: 2,
+            project: $.id
+        }
+    }, function () {
+        switch (this.status) {
+        case 200:
+            window.location.reload();
 
             break;
         default:
@@ -265,6 +351,7 @@ function showMessage (xhr) {
             <nav>
                 <span title="Save" class="button" id="save">&#xf0c7;</span>
                 <span title="Remove" class="button" id="remove">&#xf1f8;</span>
+                <span title="Reload" class="button" id="reload">&#xf2f1;</span>
             </nav>
             <span id="close" title="Close Document" class="button">&#xf00d;</span>
         </header>
@@ -324,13 +411,13 @@ function showMessage (xhr) {
                 <colgroup>
                     <col width="160">
                     <col width="160">
-                    <col width="200">
+                    <col width="160">
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>예정일</th>
-                        <th>확정일</th>
-                        <th>세금계산서</th>
+                        <th>예정</th>
+                        <th>계산서발행</th>
+                        <th>확정</th>
                         <th colspan="3">금액</th>
                     </tr>
                 </thead>
@@ -348,9 +435,9 @@ function showMessage (xhr) {
                 </colgroup>
                 <thead>
                     <tr>
-                        <th>예정일</th>
-                        <th>확정일</th>
-                        <th>세금계산서</th>
+                        <th>예정</th>
+                        <th>계산서발행</th>
+                        <th>확정</th>
                         <th colspan="3">금액</th>
                     </tr>
                 </thead>
@@ -368,14 +455,15 @@ const
     search = new URLSearchParams(window.location.search),
     $ = {
         request: new Request(),
-        id: search.get("id") || undefined
+        id: Number(search.get("id")) || undefined
     };
 
 document.getElementById("save").onclick = onSave;
 document.getElementById("remove").onclick = onRemove;
-document.getElementById("close").onclick = e =>top.closeDialog();
-document.getElementById("add_sale").onclick = e => document.getElementById("list_sale").appendChild(createItem());
-document.getElementById("add_buy").onclick = e => document.getElementById("list_buy").appendChild(createItem());
+document.getElementById("reload").onclick = e => window.location.reload();
+document.getElementById("close").onclick = e => top.closeDialog();
+document.getElementById("add_sale").onclick = onAddSale;
+document.getElementById("add_buy").onclick = onAddBuy;
 
 {
     const select = document.body.querySelector("[name=manager]");
@@ -429,40 +517,19 @@ document.getElementById("add_buy").onclick = e => document.getElementById("list_
         }, initManager);
     }
 }
-
-{    
-    function initCompany(e) {
-        switch (this.status) {
-        case 200:
-            $.select = new Select({
-                id: "company",
-                attr: "name",
-                data: JSON.parse(this.responseText)
-            });
     
-            $.select.addEventListener("change", resetManager);
-
-            initialize();
-
-            break;
-        default:
-            showMessage(this);
-        }
-    }
-}
-
-function initItem() {
-    switch(this.status) {
+function initCompany(e) {
+    switch (this.status) {
     case 200:
-        const df = document.createDocumentFragment();
+        $.select = new Select({
+            id: "company",
+            attr: "name",
+            data: JSON.parse(this.responseText)
+        });
 
-        $.itemData = JSON.parse(this.responseText);
+        $.select.addEventListener("change", resetManager);
 
-        for (let id in $.itemData) {
-            df.appendChild(createItem($.itemData[id]));
-        }
-
-        document.getElementById("list_sale").appendChild(df);
+        initialize();
 
         break;
     default:
@@ -491,15 +558,49 @@ function initProject () {
     }
 }
 
+function initInvoice() {
+    switch(this.status) {
+    case 200:
+        const
+            invoiceData = JSON.parse(this.responseText),
+            dfS = document.createDocumentFragment(),
+            dfB = document.createDocumentFragment();
+        let invoice;
+
+        for (let id in invoiceData) {
+            invoice = invoiceData[id];
+
+            if (invoice.type === 1) {
+                dfS.appendChild(createItem(invoice));
+            } else if (invoice.type === 2) {
+                dfB.appendChild(createItem(invoice));
+            }
+        }
+
+        document.getElementById("list_sale").appendChild(dfS);
+        document.getElementById("list_buy").appendChild(dfB);
+
+        $.request.execute({
+            command: "get",
+            target: "project",
+            id: $.id
+        }, initProject);
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
 function initialize() {
     if ($.id) {
         document.body.classList.add("edit");
 
         $.request.execute({
             command: "get",
-            target: "project",
-            id: Number($.id)
-        }, initProject);
+            target: "invoice",
+            project: $.id
+        }, initInvoice);
     } else {
         document.body.classList.remove("loading");
     }   

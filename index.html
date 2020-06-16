@@ -181,6 +181,8 @@ function signIn (account) {
 
     window.account = account;
 
+    document.title = `CeRP ${$.request.agent}`;
+
     document.getElementById("user").textContent = account.username;
 
     document.getElementById("signout").onclick = onSignOut;
@@ -209,7 +211,9 @@ function onSignOut() {
     <body>
         <section class="erp">
             <header>
-                <ul></ul>
+                <ul>
+                    <li><img src="/img/ci/logo_tw.png" height="32"></li>
+                </ul>
                 <ul>
                     <details>
                         <summary id="user"></summary>

@@ -51,6 +51,8 @@ function createItem(user) {
 
     tr.dataset.id = user.id;
 
+    tr.title = user.id;
+    
     tr.onclick = onSelectItem;
 
     return tr;
