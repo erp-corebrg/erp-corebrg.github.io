@@ -70,6 +70,8 @@ function initOperation(operation) {
         $.form.elements["after"].value = operation.after;
         $.form.elements["extra"].value = operation.extra;
         $.form.elements["total"].value = operation.total;
+        $.form.elements["parking"].value = operation.parking;
+        $.form.elements["stock"].value = operation.stock;
         $.form.elements["comment"].value = operation.comment;
 
         $.select.value = operation.car;
@@ -119,6 +121,8 @@ function onSubmit (e) {
             after: after,
             extra: extra,
             total: total,
+            parking: this.elements["parking"].value,
+            stock: this.elements["stock"].value,
             comment: this.elements["comment"].value
         }
     }, function (e) {
@@ -221,6 +225,18 @@ function showMessage(xhr) {
                             <th>업무용 주행(km)</th>
                             <td>
                                 <input name="total" type="number">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>주차 위치</th>
+                            <td>
+                                <input name="parking" type="text">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>연료 잔량</th>
+                            <td>
+                                <input name="stock" type="text">
                             </td>
                         </tr>
                         <tr>

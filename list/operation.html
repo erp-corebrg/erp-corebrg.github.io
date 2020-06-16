@@ -93,6 +93,8 @@ function createItem(operation) {
     item.appendChild(document.createElement("td")).textContent = operation.after;
     item.appendChild(document.createElement("td")).textContent = operation.extra;
     item.appendChild(document.createElement("td")).textContent = operation.total;
+    item.appendChild(document.createElement("td")).textContent = operation.parking;
+    item.appendChild(document.createElement("td")).textContent = operation.stock;
     item.appendChild(document.createElement("td")).textContent = operation.comment;
 
     item.dataset.id = operation.id;
@@ -189,13 +191,15 @@ function showMessage(xhr) {
             <table>
                 <colgroup>
                     <col width="120">
-                    <col width="160">
                     <col width="150">
                     <col width="150">
                     <col width="120">
-                    <col width="120">
-                    <col width="120">
-                    <col width="120">
+                    <col width="100">
+                    <col width="100">
+                    <col width="100">
+                    <col width="100">
+                    <col width="150">
+                    <col width="90">
                     <col>
                 </colgroup>
                 <thead>
@@ -209,6 +213,8 @@ function showMessage(xhr) {
                         <th colspan="2">사용자</th>
                         <th colspan="2">주행 확인</th>
                         <th colspan="2">주행 거리</th>
+                        <th rowspan="2">주차위치</th>
+                        <th rowspan="2">연료잔량</th>
                         <th rowspan="2">비고</th>
                     </tr>
                     <tr>
