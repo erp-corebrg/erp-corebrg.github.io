@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+
+@import "/css/style.css";
+@import "/css/dialog.css";
+@import "/css/select.css";
+@import "/css/fa.css";
+
+        </style>
+        <script>
+
+function initCar() {
+    $.select = $.form.elements["car"];
+
+    switch(this.status) {
+    case 200:
+        const
+            carData = JSON.parse(this.responseText),
+            df = document.createDocumentFragment();
+        var option;
+
+        for (let id in carData) {
+            option = document.createElement("option");
+
+            option.value = id;
+            option.text = carData[id].name;
+
+            df.appendChild(option);
+        }
+
+        $.select.appendChild(df);
+        
+        if ($.id) {
+            document.body.classList.add("edit");
+
+            $.request.execute({
+                command: "get",
+                target: "operation",
+                id: $.id
+            }, initOperation);
+        } else {
+            $.select.selectedIndex = -1;
+            
+            $.form.elements["name"].value = top.account.name;
+            $.form.elements["date"].value = (d =>
+                `${d.getFullYear()}-${d.getMonth() > 8? (d.getMonth() +1): ("0"+d.getMonth())}-${d.getDate() > 9? (d.getDate()): ("0"+d.getDate())}`
+            )(new Date());
+
+            document.body.classList.remove("loading");
+        }
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function initOperation(operation) {
+    switch(this.status) {
+    case 200:
+        const operation = JSON.parse(this.responseText);
+
+        $.form.elements["name"].value = operation.user;
+        $.form.elements["date"].value = operation.date;
+        $.form.elements["before"].value = operation.before;
+        $.form.elements["after"].value = operation.after;
+        $.form.elements["extra"].value = operation.extra;
+        $.form.elements["total"].value = operation.total;
+        $.form.elements["comment"].value = operation.comment;
+
+        $.select.value = operation.car;
+
+        document.body.classList.add("edit");
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function onSubmit (e) {
+    e.preventDefault();
+
+    const
+        before = Number(this.elements["before"].value),
+        after = Number(this.elements["after"].value);
+    var
+        total = Number(this.elements["total"].value || 0),
+        extra = 0;
+
+    if (before >= after) {
+        return this.elements["after"].select();
+    }
+
+    if (total) {
+        extra = after - before - total;
+
+        if (extra < 0) {
+            return this.elements["total"].select();
+        }
+    } else {
+        total = after - before;
+    }
+
+    $.request.execute({
+        command: $.id? "set": "add",
+        target: "operation",
+        id: $.id,
+        operation: {
+            car: $.select.value,
+            date: this.elements["date"].value,
+            before: before,
+            after: after,
+            extra: extra,
+            total: total,
+            comment: this.elements["comment"].value
+        }
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function onReset (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: "remove",
+        target: "operation",
+        id: $.id
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+    
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <main>
+            <h2>
+                Car Operation
+                <span id="close" title="Close Dialog">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>사용자</th>
+                            <td>
+                                <input name="name" type="text" readonly>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>차량</th>
+                            <td>
+                                <select name="car" required></select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>날짜</th>
+                            <td>
+                                <input name="date" type="date" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>주행전(Km)</th>
+                            <td>
+                                <input name="before" type="number" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>주행 후(Km)</th>
+                            <td>
+                                <input name="after" type="number" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>비 업무 주행(Km)</th>
+                            <td>
+                                <input name="extra" type="number" readonly>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>업무용 주행(km)</th>
+                            <td>
+                                <input name="total" type="number">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>비고</th>
+                            <td>
+                                <input name="comment" type="text">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; Remove">
+                    <input type="submit" value="&#xf00c; Apply">
+                </footer>
+                <div class="bg_loading"></div>
+            </form>
+        </main>
+        <script src="/js/request.js"></script>
+        <script src="/js/select.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: search.get("id") || undefined,
+        form: document.body.querySelector("form")
+    };
+
+document.getElementById("close").onclick = e =>top.closeDialog();
+
+$.form.onsubmit = onSubmit;
+$.form.onreset = onReset;
+
+$.request.execute({
+    command: "get",
+    target: "car",
+}, initCar);
+
+        </script>
+    </body>
+
+</html>

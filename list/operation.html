@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		
+		<title>CeRP</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/list.css";
+@import "/css/fa.css";
+
+#sort::after {
+    font-family: "Font Awesome 5 Free";
+    content: "\f0dc";
+	cursor: pointer;
+    position: absolute; right: 3px;
+}
+
+#sort.sorted::after {
+	content: "\f0de";
+}
+
+#sort.ascending::after {
+	content: "\f0dd";
+}
+
+header input,
+header select {
+	padding: .5em;
+}
+
+nav {
+	display: flex;
+	align-items: center;
+}
+
+nav> div {
+	margin-right: 5px;
+}
+
+nav >img {
+	cursor: pointer;
+}
+
+ul {
+	margin: 0; padding: 0;
+	list-style: none;
+}
+
+tbody td:first-child {
+    text-align: center;
+    color: #efefef;
+    background-color: #28a745;
+}
+
+#count {
+	font-size: 30px; font-weight: bold;
+	display: inline-block;
+	margin: 0 30px;
+}
+
+.button {
+    font-size: 2em;
+}
+
+.button:hover {
+    color: #fcba30;
+    transition: color 0.5s linear;
+}
+
+header form input {
+    font-family: "Font Awesome 5 Free";
+}
+
+tr.hidden,
+body.keyword #list tr:not(.keyword){
+	display: none;
+}
+
+		</style>
+
+		<script>
+
+function createItem(operation) {
+    const item = document.createElement("tr");
+
+    item.appendChild(document.createElement("td")).textContent = operation.date;
+    item.appendChild(document.createElement("td")).textContent = operation.car;
+    item.appendChild(document.createElement("td"));
+    item.appendChild(document.createElement("td")).textContent = operation.user;
+    item.appendChild(document.createElement("td")).textContent = operation.before;
+    item.appendChild(document.createElement("td")).textContent = operation.after;
+    item.appendChild(document.createElement("td")).textContent = operation.extra;
+    item.appendChild(document.createElement("td")).textContent = operation.total;
+    item.appendChild(document.createElement("td")).textContent = operation.comment;
+
+    item.dataset.id = operation.id;
+
+    item.onclick = onSelectItem;
+
+    return item;
+}
+
+function onSelectItem() {
+    top.showDialog(`/dialog/operation.html?id=${this.dataset.id}`);
+}
+
+function onExport() {
+	const row = [];
+	
+	row[0] = "Date,Car,Team,Name,Before,After,Extra,Total,Comment";
+	
+    [].forEach.call(document.getElementById("list").children, tr => {
+        const col = [];
+
+        [].forEach.call(tr.children, td => {
+            col.push(`"${td.textContent.replace(/\"/g, "'")}"`);
+        })
+
+        row.push(col.join(","));
+    });
+
+	download(new Blob(["\ufeff", row.join("\n")] ,{
+		type: "text/csv;charset=utf-8;"
+	}), "operation.csv");
+}
+
+function download (blob, fileName) {
+    const a = document.createElement("a"),
+        event = document.createEvent("MouseEvent");
+        
+    a.setAttribute("download", fileName);
+    a.setAttribute("href", URL.createObjectURL(blob));
+    
+    event.initEvent("click", true, true);
+    
+    a.dispatchEvent(event);
+}
+
+function initOperation() {
+    switch (this.status) {
+    case 200:
+        const
+            opData = JSON.parse(this.responseText),
+            df = document.createDocumentFragment();
+        
+        Object.keys(opData)
+            .sort((a, b) => new Date(opData[a].date) - new Date(opData[b].date))
+            .forEach(id => df.appendChild(createItem(opData[id])));
+
+        document.getElementById("list").appendChild(df);
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+		
+	</head>
+	
+	<body class="loading">
+        <header>
+            <nav>
+                <span class="button" id="add" title="Add Item">&#xf055;</span>
+                <span class="button" id="export" title="CSV Export">&#xf019;</span>
+            </nav>
+        </header>
+        <main>
+            <table>
+                <colgroup>
+                    <col width="120">
+                    <col width="100">
+                    <col width="150">
+                    <col width="150">
+                    <col width="120">
+                    <col width="120">
+                    <col width="120">
+                    <col width="120">
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th rowspan="2">
+                            날짜
+                        </th>
+                        <th rowspan="2">
+                            차량
+                        </th>
+                        <th colspan="2">사용자</th>
+                        <th colspan="2">주행 확인</th>
+                        <th colspan="2">주행 거리</th>
+                        <th rowspan="2">비고</th>
+                    </tr>
+                    <tr>
+                        <th>부서</th>
+                        <th>성명</th>
+                        <th>주행 전</th>
+                        <th>주행 후</th>
+                        <th>비 업무</th>
+                        <th>업무</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </main>
+		
+		<div class="bg_loading"></div>
+		
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+		<script>
+
+const $ = {
+        request: new Request(),
+        list: document.getElementById("list"),
+        form: document.querySelector("form")
+    };
+
+document.getElementById("add").onclick = e => top.showDialog("/dialog/operation.html");
+document.getElementById("export").onclick = onExport;
+
+$.request.execute({
+    command: "get",
+    target: "operation"
+}, initOperation);
+
+        </script>
+	
+	</body>
+	
+</html>

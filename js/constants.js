@@ -16,6 +16,9 @@ const
     INFO_PASSWORD_CHANGED = {
         kr: "Information.\n\n비밀번호 변경 완료."
     },
+    ERROR_INVALID_ACCESS = {
+        kr: "Error!\n\n잘못된 접근.\n"
+    },
     ERROR_REMOVE_RESTRICT = {
         kr: "Error!\n\n사용중인 정보는 삭제할수 없습니다.\n"
     },
@@ -27,4 +30,7 @@ const
     },
     NOTICE_SESSION_EXPIRED = {
         kr: "Notice!\n\n세션 만료."
+    },
+    NOTICE_NO_AUTH = {
+        kr: "Notice!\n\n"+ "권한 없음."
     }

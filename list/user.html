@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+@import "/css/style.css";
+@import "/css/list.css";
+@import "/css/fa.css";
+
+tbody th {
+    text-align: center;
+    color: #efefef;
+    background-color: #28a745;
+}
+
+tbody tr:hover td:nth-of-type(1) {
+    text-align: center;
+}
+
+tbody tr:hover td:nth-of-type(1)::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f023";
+}
+
+.button {
+    font-size: 2em;
+}
+
+        </style>
+        <script>
+
+function createItem(user) {
+    const
+        tr = document.createElement("tr"),
+        password = document.createElement("td"),
+        username = document.createElement("th"),
+        name = document.createElement("td"),
+        role = document.createElement("td"),
+        part = document.createElement("td"),
+        mobile = document.createElement("td"),
+        phone = document.createElement("td");
+
+    tr.appendChild(password).onclick = onChangePassword;
+    tr.appendChild(username).textContent = user.username;
+    tr.appendChild(name).textContent = user.name;
+    tr.appendChild(role).textContent = user.role;
+    tr.appendChild(part).textContent = user.part;
+    tr.appendChild(mobile).textContent = user.mobile;
+    tr.appendChild(phone).textContent = user.phone;
+
+    tr.dataset.id = user.id;
+
+    tr.onclick = onSelectItem;
+
+    return tr;
+}
+
+function onSelectItem(e) {
+    top.showDialog(`/dialog/user.html?id=${this.dataset.id}`);
+}
+
+function onChangePassword(e) {
+    e.stopPropagation();
+
+    top.showDialog(`/dialog/password.html?id=${this.parentNode.dataset.id}`);
+}
+
+function showDialog(user) {
+    const dialog = document.getElementById("dialog");
+
+    dialog.onload = function (e) {
+        dialog.contentWindow.initialize(user);
+
+        document.body.classList.add("dialog");
+    };
+
+    dialog.src = "/dialog/user.html";
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    case 403:
+        alert(NOTICE_NO_AUTH["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <span class="button" id="add" title="Add User">&#xf055;</span>
+            </nav>
+        </header>
+        <main>
+            <table>
+                <colgroup>
+                    <col width="50">
+                    <col>
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th colspan="2">아이디</th>
+                        <th>이름</th>
+                        <th>직급</th>
+                        <th>부서</th>
+                        <th>모바일</th>
+                        <th>내선</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </main>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const $ = {
+        request: new Request(),
+        list: document.getElementById("list"),
+        form: document.querySelector("form")
+    };
+
+document.getElementById("add").onclick = e => top.showDialog("/dialog/user.html");
+
+
+$.request.execute({
+    command: "get",
+    target: "user"
+}, initUser);
+
+function initUser () {
+    switch (this.status) {
+    case 200:
+        const
+            userData = JSON.parse(this.responseText),
+            df = document.createDocumentFragment();
+
+        for (let id in userData) {
+            df.appendChild(createItem(userData[id]));
+        }
+
+        document.getElementById("list").appendChild(df);
+
+        break;
+    default:
+        showMessage(this);
+    }
+};
+
+
+        </script>
+    </body>
+
+</html>

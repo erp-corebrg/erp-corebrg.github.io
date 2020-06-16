@@ -21,7 +21,7 @@ main {
 
 table {
     table-layout: fixed;
-    border-collapse: collapse;
+    /*border-collapse: collapse;*/
     width: 100%;
 }
 
@@ -30,14 +30,18 @@ tbody tr {
     cursor: pointer;
 }
 
-th {
+thead th {
     background-color: #34495e;
     color: #efefef;
     position: sticky; top: 0;
 }
 
-th:not(:last-of-type) {
+thead th:not(:last-of-type) {
     border-right: 1px solid rgba(52, 73, 94, 0.8);
+}
+
+thead tr:not(:last-of-type) {
+    border-bottom: 1px solid rgba(52, 73, 94, 0.8);
 }
 
 th,
@@ -47,6 +51,10 @@ td {
 	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-tr:nth-child(odd) {
+tbody tr {
+    background-color: #ffffff;
+}
+
+tbody tr:nth-child(odd) {
 	background-color: #ebebeb;
 }

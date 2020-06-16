@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>ERP</title>
+        <style>
+
+@import "/css/style.css";
+@import "/css/dialog.css";
+@import "/css/select.css";
+@import "/css/fa.css";
+
+        </style>
+        <script>
+
+function initCar() {
+    switch(this.status) {
+    case 200:
+        const car = JSON.parse(this.responseText);
+
+        $.form.elements["name"].value = car.name;
+        $.form.elements["number"].value = car.number;
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function onSubmit (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: $.id? "set": "add",
+        target: "car",
+        id: $.id,
+        car: {
+            name: this.elements["name"].value,
+            number: this.elements["number"].value
+        }
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function onReset (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: "remove",
+        target: "car",
+        id: $.id
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <main>
+            <h2>
+                Car Operation
+                <span id="close" title="Close Dialog">&#xf00d;</span>
+            </h2>
+            <form>
+                <table>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>차량명</th>
+                            <td>
+                                <input name="name" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>등록번호</th>
+                            <td>
+                                <input name="number" type="text" required>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <footer>
+                    <input type="reset" value="&#xf2ed; Remove">
+                    <input type="submit" value="&#xf00c; Apply">
+                </footer>
+                <div class="bg_loading"></div>
+            </form>
+        </main>
+        <script src="/js/request.js"></script>
+        <script src="/js/select.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: search.get("id") || undefined,
+        form: document.body.querySelector("form")
+    };
+
+document.getElementById("close").onclick = e =>top.closeDialog();
+
+$.form.onsubmit = onSubmit;
+$.form.onreset = onReset;
+
+if ($.id) {
+    document.body.classList.add("edit");
+    
+    $.request.execute({
+        command: "get",
+        target: "car",
+        id: $.id
+    }, initCar);
+} else {
+    document.body.classList.remove("loading");
+}
+        </script>
+    </body>
+
+</html>

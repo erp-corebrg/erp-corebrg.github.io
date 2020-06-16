@@ -4,81 +4,107 @@
 		<meta charset="UTF-8">
 		<title>ERP</title>
         <style>
-@import "/css/fa.css";
+@import "/css/style.css";
 @import "/css/dialog.css";
+@import "/css/fa.css";
 
-body,
-input,
-textarea {
-    font: 10pt "맑은 고딕", Tahoma, Arial;
-}
 
-th {
-    /*background-color: #5bc0de;
-    color: #fff;*/
-    width: 120px;
-}
-
-td >input[type=text],
-td >input[type=password] {
-    width: 100%;
-    padding: 0.5em;
-    box-sizing: border-box;
-}
-
-textarea {
-    resize: none;
-}
-
-body:not(.new) tr.new,
-body.new input[type=reset] {
+body.edit .password {
     display: none;
 }
 
         </style>
         <script>
 
-function initialize(user) {
-    if (user) {
+function initUser() {
+    switch (this.status) {
+    case 200:
         const
-            form = document.body.querySelector("form"),
+            user = JSON.parse(this.responseText),
             df = document.createDocumentFragment();
 
-        form.elements["username"].value = user.username;
-        form.elements["name"].value = user.name;
-        form.elements["role"].value = user.role;
-        form.elements["part"].value = user.part;
-        form.elements["mobile"].value = user.mobile;
-        form.elements["phone"].value = user.phone;
-        form.elements["level"].value = user.level;
+        $.form.elements["username"].value = user.username;
+        $.form.elements["name"].value = user.name;
+        $.form.elements["role"].value = user.role;
+        $.form.elements["part"].value = user.part;
+        $.form.elements["mobile"].value = user.mobile;
+        $.form.elements["phone"].value = user.phone;
+        $.form.elements["level"].value = user.level;
+        $.form.elements["username"].setAttribute("readonly", true);
 
-        form.elements["username"].disabled = true;
+        [].forEach.call(document.body.querySelectorAll("[type=password]"), input => input.removeAttribute("required"));
 
-        [].forEach.call(document.body.querySelectorAll("tr.new"), tr => df.appendChild(tr));
-
-        $.request.command = "set";
-        $.request.id = user.id;
-    } else {
-        $.request.command = "add";
-        
-        document.body.classList.add("new");
+        break;
+    default:
+        showMessage(this);
     }
 }
 
-function showMessage(data) {
-    switch (data.status) {
+function onSubmit (e) {
+    e.preventDefault();
+
+    document.body.classList.add("loading");
+
+    $.request.execute({
+        command: $.id? "set": "add",
+        target: "user",
+        id: $.id,
+        user: {
+            username: this.elements["username"].value,
+            name: this.elements["name"].value,
+            role: this.elements["role"].value,
+            part: this.elements["part"].value,
+            mobile: this.elements["mobile"].value,
+            phone: this.elements["phone"].value,
+            level: Number(this.elements["level"].value),
+            password: hex_md5(this.elements["password"].value)
+        }
+    }, function () {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        default:
+            showMessage(this);
+        }
+    });
+}
+
+function onReset (e) {
+    e.preventDefault();
+
+    $.request.command = "remove";
+
+    $.thread.onmessage = e => {
+        switch(this.status) {
+        case 200:
+            parent.location.reload();
+
+            break;
+        default:
+            showMessage(this);
+        }
+    };
+
+    $.thread.postMessage({
+        action: "request",
+        request: $.request
+    });
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
     case 401:
-        alert("Notice!\n\n"+ "세션 만료.");
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
 
         break;
-    case -1:
-        console.trace(e.data.exception);
     default:
-        alert("Error!\n\n"+ "오류코드: "+ data.status);
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
     }
-
+    
     try {
-        console.log(JSON.parse(data.responseText).error);
+        console.log(JSON.parse(xhr.responseText).error);
     } catch (e) {}
 }
 
@@ -87,157 +113,109 @@ function showMessage(data) {
     <body>
         <main>
             <h2>
-                사용자
+                User
                 <span class="glyph close" id="close" title="대화창 닫기">&#xf00d;</span>
             </h2>
             <form>
                 <table>
-                    <tr>
-                        <th>아이디</th>
-                        <td>
-                            <input name="username" type="text" required />
-                        </td>
-                    </tr>
-                    <tr class="new">
-                        <th>비밀번호</th>
-                        <td>
-                            <input name="password" type="password" required />
-                        </td>
-                    </tr>
-                    <tr class="new">
-                        <th>비밀번호 확인</th>
-                        <td>
-                            <input name="password2" type="password" required />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>이름</th>
-                        <td>
-                            <input name="name" type="text" required />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>직급</th>
-                        <td>
-                            <input name="role" type="text" required />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>부서</th>
-                        <td>
-                            <input name="part" type="text" required />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>모바일</th>
-                        <td>
-                            <input name="mobile" type="text" required />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>내선</th>
-                        <td>
-                            <input name="phone" type="text" />
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>권한</th>
-                        <td>
-                            <input name="level" type="text" required />
-                        </td>
-                    </tr>
+                    <colgroup>
+                        <col width="120">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>아이디</th>
+                            <td>
+                                <input name="username" type="text" required>
+                            </td>
+                        </tr>
+                        <tr class="password">
+                            <th>비밀번호</th>
+                            <td>
+                                <input name="password" type="password" required>
+                            </td>
+                        </tr>
+                        <tr class="password">
+                            <th>비밀번호 확인</th>
+                            <td>
+                                <input name="password2" type="password" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>이름</th>
+                            <td>
+                                <input name="name" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>직급</th>
+                            <td>
+                                <input name="role" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>부서</th>
+                            <td>
+                                <input name="part" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>모바일</th>
+                            <td>
+                                <input name="mobile" type="text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>내선</th>
+                            <td>
+                                <input name="phone" type="text">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>권한</th>
+                            <td>
+                                <select name="level" required>
+                                    <option value="0">root</option>
+                                    <option value="1" selected>user</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
                 </table>
                 <footer>
-                    <input type="reset" value="&#xf2ed; 삭제">
-                    <input type="submit" value="&#xf00c; 적용">
+                    <input type="reset" value="&#xf2ed; Remove">
+                    <input type="submit" value="&#xf00c; Apply">
                 </footer>
             </form>
         </main>
 
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
         <script src="/js/md5.js"></script>
         <script>
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
+        request: new Request(),
+        id: Number(search.get("id")) || undefined,
+        form: document.body.querySelector("form")
+    };
 
-const $ = {
-    thread: new Worker("/js/thread.js"),
-    agent: window.localStorage.getItem("agent"),
-    request: {
-        target: "user"
-    }
-};
+document.getElementById("close").onclick = e =>top.closeDialog();
 
-if (!$.agent) {
-    throw "";
+$.form.onsubmit = onSubmit;
+$.form.onreset = onReset;
+
+if ($.id) {
+    document.body.classList.add("edit");
+
+    $.request.execute({
+        command: "get",
+        target: "user",
+        id: $.id
+    }, initUser);
+} else {
+    document.body.classList.remove("loading");
 }
-
-$.thread.postMessage({
-    action: "initialize",
-    agent: $.agent
-});
-
-document.body.querySelector("form").onsubmit = function (e) {
-    e.preventDefault();
-
-    $.request.user = {
-        username: this.elements["username"].value,
-        name: this.elements["name"].value,
-        role: this.elements["role"].value,
-        part: this.elements["part"].value,
-        mobile: this.elements["mobile"].value,
-        phone: this.elements["phone"].value,
-        level: this.elements["level"].value
-    };
-
-    if ($.request.command === "add") {
-        $.request.user.password = hex_md5(this.elements["password"].value);
-    }
-
-    $.thread.onmessage = e => {
-        switch(e.data.status) {
-        case 200:
-            parent.location.reload();
-
-            break;
-        default:
-            showMessage(e.data);
-        }
-    };
-
-    $.thread.postMessage({
-        action: "request",
-        request: $.request
-    });
-};
-
-document.body.querySelector("form").onreset = function (e) {
-    e.preventDefault();
-
-    $.request.command = "remove";
-
-    $.thread.onmessage = e => {
-        switch(e.data.status) {
-        case 200:
-            parent.location.reload();
-
-            break;
-        case 500:
-            alert("Error!\n\n사용자 삭제 실패.");
-
-            break;
-        default:
-            showMessage(e.data);
-        }
-    };
-
-    $.thread.postMessage({
-        action: "request",
-        request: $.request
-    });
-};
-
-document.getElementById("close").onclick = function (e) {
-    parent.document.body.classList.remove("dialog");
-};
-
         </script>
     </body>
 

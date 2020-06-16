@@ -142,13 +142,13 @@ $.form.onreset = function (e) {
 function initManager() {
     switch(this.status) {
     case 200:
-        $.manager = JSON.parse(this.responseText);
+        const manager = JSON.parse(this.responseText);
 
-        $.form.elements["name"].value = $.manager.name;
-        $.form.elements["mobile"].value = $.manager.mobile;
-        $.form.elements["email"].value = $.manager.email;
+        $.form.elements["name"].value = manager.name;
+        $.form.elements["mobile"].value = manager.mobile;
+        $.form.elements["email"].value = manager.email;
 
-        $.select.value = $.manager.company;
+        $.select.value = manager.company;
 
         document.body.classList.add("edit");
 

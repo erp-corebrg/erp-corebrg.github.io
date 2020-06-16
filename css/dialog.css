@@ -65,12 +65,22 @@ table {
 }
 
 td >input[type=text],
+td >input[type=password],
 td >input[type=number],
 td >input[type=textarea],
+td >input[type=date],
 td >select {
     width: 100%;
     padding: 0.5em;
     box-sizing: border-box;
+}
+
+td >input[type=number] {
+    text-align: right;
+}
+
+textarea {
+    resize: none;
 }
 
 #close {
