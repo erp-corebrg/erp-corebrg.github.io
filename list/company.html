@@ -10,18 +10,18 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
-.sort::after {
+#sort::after {
     font-family: "Font Awesome 5 Free";
     content: "\f0dc";
 	cursor: pointer;
     position: absolute; right: 3px;
 }
 
-.sort.sorted::after {
+#sort.sorted::after {
 	content: "\f0de";
 }
 
-.sort.ascending::after {
+#sort.ascending::after {
 	content: "\f0dd";
 }
 
@@ -48,48 +48,23 @@ ul {
 	list-style: none;
 }
 
-tr >td:first-child {
+tbody th {
     text-align: center;
     color: #efefef;
     background-color: #28a745;
 }
 
-tr[data-disabled] >td:first-child {
-    background-color: #6c757d;
+.button {
+    font-size: 2em;
 }
 
-tr[data-disabled] {
-	color: #999;
-}
-
-#count {
-	font-size: 30px; font-weight: bold;
-	display: inline-block;
-	margin: 0 30px;
-}
-
-.glyph {
-    font: 2em "Font Awesome 5 Free";
-    cursor: pointer;
-    
-}
-
-.glyph:hover {
+.button:hover {
     color: #fcba30;
     transition: color 0.5s linear;
 }
 
 header form input {
     font-family: "Font Awesome 5 Free";
-}
-
-tr.hidden,
-body.keyword #list tr:not(.keyword),
-#list.normal tr:not([data-normal]),
-#list.critical tr:not([data-critical]),
-#list.shutdown tr:not([data-shutdown]),
-#list.disabled tr:not([data-disabled]) {
-	display: none;
 }
 
 		</style>
@@ -99,7 +74,7 @@ body.keyword #list tr:not(.keyword),
 function createItem(company) {
     const item = document.createElement("tr");
 
-    item.appendChild(document.createElement("td")).textContent = company.name;
+    item.appendChild(document.createElement("th")).textContent = company.name;
     item.appendChild(document.createElement("td")).textContent = company.id;
     item.appendChild(document.createElement("td")).textContent = company.ceo;
     item.appendChild(document.createElement("td")).textContent = company.address;
@@ -117,50 +92,14 @@ function onSelectItem() {
 
 function onSort (e) {
 	const
-		reverse = !this.classList.toggle("ascending"),
+        ascending = this.classList.toggle("ascending"),
 		df = document.createDocumentFragment();
 
     this.classList.add("sorted");
 
-	[].slice.call($.list.children).sort(reverse?
-		function (a, b) {
-			const
-				ipA = a.children[1].textContent,
-				ipB = b.children[1].textContent;
-			
-			if (ipA && ipB) {
-				return IP2Int(ipB) - IP2Int(ipA);
-			}
-			else if (ipB) {
-				return 1;
-			}
-			else if (ipA) {
-				return -1;
-			}
-			else {
-				return 0;
-			}
-		}:
-		function (a, b) {
-			const
-				ipA = a.children[1].textContent,
-				ipB = b.children[1].textContent;
-			
-			if (ipA && ipB) {
-				return IP2Int(ipA) - IP2Int(ipB);
-			}
-			else if (ipB) {
-				return 1;
-			}
-			else if (ipA) {
-				return -1;
-			}
-			else {
-				return 0;
-			}
-		}).forEach(function (e) {
-			df.appendChild(e);
-		});
+    [].slice.call($.list.children)
+        .sort((a, b) => a.children[0].textContent.localeCompare(b.children[0].textContent) * (ascending? 1: -1))
+        .forEach(e => df.appendChild(e));
 
 	$.list.appendChild(df);
 }
@@ -168,55 +107,29 @@ function onSort (e) {
 function onSearch (e) {
     e.preventDefault();
     
-    document.body.classList.add("loading", "keyword");
-
-    const keyword = this.elements["keyword"].value;
-
-    if (!keyword) {
-        return $.form.reset();
-    }
-
-    const df = document.createDocumentFragment();
+    const
+        keyword = this.elements["keyword"].value,
+        df = document.createDocumentFragment();
     
-    for (let row, cols; row = $.list.firstElementChild;) {
-        cols = row.children;
+    document.body.classList.remove("loading");
 
-        df.appendChild(row);
-
-        for (var i=0, length=cols.length; i<length; i++) {
-            row.classList.remove("keyword");
-
-            if (cols[i].textContent.indexOf(keyword) !== -1) {
-                row.classList.add("keyword");
-                
-                break;
-            }
+    [].slice.call($.cache.children).forEach(e => {
+        if (e.children[0].textContent.indexOf(keyword) !== -1) {
+            df.appendChild(e);
         }
-    }
-    
-    $.list.appendChild(df);
+    });
 
-    document.body.classList.remove("loading");
-
-    document.getElementById("count").textContent = count();
-}
-
-function onReset(e) {
-    const df = document.createDocumentFragment();
-
-    document.body.classList.add("loading");
-    
-    for (let row; row = $.list.firstElementChild;) {
-        df.appendChild(row).classList.remove("keyword");
-    }
-
-    document.body.classList.remove("keyword");
+    [].slice.call($.list.children).forEach(e => {
+        if (e.children[0].textContent.indexOf(keyword) !== -1) {
+            df.appendChild(e);
+        } else {
+            $.cache.appendChild(e);
+        }
+    });
 
     $.list.appendChild(df);
 
     document.body.classList.remove("loading");
-
-    document.getElementById("count").textContent = count();
 }
     
 function onSave() {
@@ -313,12 +226,11 @@ function showMessage(xhr) {
         <header>
             <nav>
                 <span class="button" title="Add Company" id="add">&#xf055;</span>
-                <span class="glyph" id="export" title="CSV 내보내기">&#xf019;</span>
+                <span class="button" id="export" title="CSV 내보내기">&#xf019;</span>
             </nav>
             <form>
                 <input type="text" name="keyword" placeholder="IP, Type, Name">
-                <input type="submit" value="&#xf002; 찾기">
-                <input type="reset" value="&#xf2f9; 초기화">
+                <input type="submit" value="&#xf002; Search">
             </form>
         </header>
         <main>
@@ -330,7 +242,7 @@ function showMessage(xhr) {
                 </colgroup>
                 <thead>
                     <tr id="header">
-                        <th>Company</th>
+                        <th id="sort">Company</th>
                         <th>Registration</th>
                         <th>CEO</th>
                         <th>Address</th>
@@ -350,13 +262,14 @@ const $ = {
         request: new Request(),
         list: document.getElementById("list"),
         header: document.getElementById("header"),
-        form: document.querySelector("form")
+        form: document.querySelector("form"),
+        cache: document.createDocumentFragment()
     };
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/company.html");
+document.getElementById("sort").onclick = onSort;
 
 $.form.onsubmit = onSearch;
-$.form.onreset = onReset;
 
 function initCompany(e) {
     switch(this.status) {

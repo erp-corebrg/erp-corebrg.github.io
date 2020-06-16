@@ -48,16 +48,14 @@ ul {
 	list-style: none;
 }
 
-tbody td:first-child {
+tbody th {
     text-align: center;
     color: #efefef;
     background-color: #28a745;
 }
 
-#count {
-	font-size: 30px; font-weight: bold;
-	display: inline-block;
-	margin: 0 30px;
+tbody td:nth-child(3) {
+    text-align: right;
 }
 
 .button {
@@ -73,10 +71,6 @@ header form input {
     font-family: "Font Awesome 5 Free";
 }
 
-tr.hidden,
-body.keyword #list tr:not(.keyword){
-	display: none;
-}
 
 		</style>
 
@@ -85,8 +79,9 @@ body.keyword #list tr:not(.keyword){
 function createItem(project) {
     const item = document.createElement("tr");
 
-    item.appendChild(document.createElement("td")).textContent = project.name;
-    item.appendChild(document.createElement("td")).textContent = project.deposit;
+    item.appendChild(document.createElement("th")).textContent = project.name;
+    item.appendChild(document.createElement("td")).textContent = project.company;
+    item.appendChild(document.createElement("td")).textContent = project.deposit.toLocaleString();
     item.appendChild(document.createElement("td")).textContent = project.contract;
     item.appendChild(document.createElement("td")).textContent = project.payment;
     item.appendChild(document.createElement("td"));
@@ -111,7 +106,7 @@ function onSort (e) {
     this.classList.add("sorted");
 
     [].slice.call($.list.children)
-        .sort((a, b) => a.children[1].textContent.localeCompare(b.children[1].textContent) * (ascending? 1: -1))
+        .sort((a, b) => a.children[0].textContent.localeCompare(b.children[0].textContent) * (ascending? 1: -1))
         .forEach(e => df.appendChild(e));
 
 	$.list.appendChild(df);
@@ -120,55 +115,29 @@ function onSort (e) {
 function onSearch (e) {
     e.preventDefault();
     
-    document.body.classList.add("loading", "keyword");
-
-    const keyword = this.elements["keyword"].value;
-
-    if (!keyword) {
-        return $.form.reset();
-    }
-
-    const df = document.createDocumentFragment();
+    const
+        keyword = this.elements["keyword"].value,
+        df = document.createDocumentFragment();
     
-    for (let row, cols; row = $.list.firstElementChild;) {
-        cols = row.children;
+    document.body.classList.remove("loading");
 
-        df.appendChild(row);
-
-        for (var i=0, length=cols.length; i<length; i++) {
-            row.classList.remove("keyword");
-
-            if (cols[i].textContent.indexOf(keyword) !== -1) {
-                row.classList.add("keyword");
-                
-                break;
-            }
+    [].slice.call($.cache.children).forEach(e => {
+        if (e.children[0].textContent.indexOf(keyword) !== -1) {
+            df.appendChild(e);
         }
-    }
-    
-    $.list.appendChild(df);
+    });
 
-    document.body.classList.remove("loading");
-
-    document.getElementById("count").textContent = count();
-}
-
-function onReset(e) {
-    const df = document.createDocumentFragment();
-
-    document.body.classList.add("loading");
-    
-    for (let row; row = $.list.firstElementChild;) {
-        df.appendChild(row).classList.remove("keyword");
-    }
-
-    document.body.classList.remove("keyword");
+    [].slice.call($.list.children).forEach(e => {
+        if (e.children[0].textContent.indexOf(keyword) !== -1) {
+            df.appendChild(e);
+        } else {
+            $.cache.appendChild(e);
+        }
+    });
 
     $.list.appendChild(df);
 
     document.body.classList.remove("loading");
-
-    document.getElementById("count").textContent = count();
 }
     
 function onSave() {
@@ -230,25 +199,6 @@ function onSave() {
 	}), "node.csv");
 }
 
-function count() {
-	var count = 0;
-
-	[].forEach.call($.list.children, function (row) {
-		if (row.offsetHeight > 0) {
-			count++;
-		}
-	});
-
-	return count;
-}
-
-
-function forEach(a, f) {
-	for (var i=0, _i=a.length; i<_i; i++) {
-		f(a[i]);
-	}
-}
-
 function showMessage(xhr) {
     switch (xhr.status) {
     case 401:
@@ -276,14 +226,14 @@ function showMessage(xhr) {
             </nav>
             <form>
                 <input type="text" name="keyword" placeholder="IP, Type, Name">
-                <input type="submit" value="&#xf002; 찾기">
-                <input type="reset" value="&#xf2f9; 초기화">
+                <input type="submit" value="&#xf002; Search">
             </form>
         </header>
         <main>
             <table>
                 <colgroup>
                     <col width="400">
+                    <col width="200">
                     <col width="120">
                     <col width="120">
                     <col width="100">
@@ -293,6 +243,7 @@ function showMessage(xhr) {
                         <th id="sort">
                             프로젝트
                         </th>
+                        <th>발주처</th>
                         <th>계약금액</th>
                         <th>계약일</th>
                         <th>지급조건</th>
@@ -314,14 +265,14 @@ const $ = {
         request: new Request(),
         list: document.getElementById("list"),
         header: document.getElementById("header"),
-        form: document.querySelector("form")
+        form: document.querySelector("form"),
+        cache: document.createDocumentFragment()
     };
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/order.html");
 document.getElementById("sort").onclick = onSort;
 
 $.form.onsubmit = onSearch;
-$.form.onreset = onReset;
 
 function initProject(e) {
     switch(this.status) {

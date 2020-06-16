@@ -47,7 +47,7 @@ function initCar() {
             
             $.form.elements["name"].value = top.account.name;
             $.form.elements["date"].value = (d =>
-                `${d.getFullYear()}-${d.getMonth() > 8? (d.getMonth() +1): ("0"+d.getMonth())}-${d.getDate() > 9? (d.getDate()): ("0"+d.getDate())}`
+                `${d.getFullYear()}-${d.getMonth() > 8? d.getMonth() +1: "0"+ (d.getMonth() +1)}-${d.getDate() > 9? (d.getDate()): ("0"+d.getDate())}`
             )(new Date());
 
             document.body.classList.remove("loading");
