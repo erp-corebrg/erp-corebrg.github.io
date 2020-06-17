@@ -31,6 +31,12 @@ h3 {
     border-bottom: 1px solid #777777;
 }
 
+h3 >i {
+    font-size: 0.8em;
+    display: block;
+    float: right;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -369,16 +375,18 @@ function showMessage (xhr) {
                     <td><input type="text" name="name" required></td>
                 </tr>
                 <tr>
-                    <th>계약금액 (부가세 별도)</th>
+                    <th>계약 금액 / 부가세 / 합계</th>
                     <td class="flex">
-                        <input type="number" name="deposit" required>
-                        <input type="text" name="payment" required>
+                        <input type="number" min="0" name="deposit" required>
+                        <input type="number" name="tax" readonly>
+                        <input type="number" name="total"" readonly>
                     </td>
                 </tr>
                 <tr>
-                    <th>계약 일자</th>
-                    <td>
+                    <th>계약 일자 / 지급 조건</th>
+                    <td class="flex">
                         <input type="date" name="contract" required>
+                        <input type="text" name="payment" required>
                     </td>
                 </tr>
                 <tr>
@@ -408,6 +416,7 @@ function showMessage (xhr) {
             <h3>
                 매출
                 <span class="button add" title="매출 아이템 추가" id="add_sale">&#xf055;</span>
+                <i>(부가세 포함)</i>
             </h3>
             <table>
                 <colgroup>
@@ -433,6 +442,7 @@ function showMessage (xhr) {
             <h3>
                 매입
                 <span class="button add" title="매입 아이템 추가" id="add_buy">&#xf055;</span>
+                <i>(부가세 포함)</i>
             </h3>
             <table>
                 <colgroup>
@@ -476,6 +486,15 @@ document.getElementById("reload").onclick = e => window.location.reload();
 document.getElementById("close").onclick = e => top.closeDialog();
 document.getElementById("add_sale").onclick = onAddSale;
 document.getElementById("add_buy").onclick = onAddBuy;
+
+document.body.querySelector("[name=deposit]").onchange = function () {
+    const
+        deposit = this.value,
+        total = Math.round(deposit * 1.1);
+
+    document.body.querySelector("[name=tax]").value = total - deposit;
+    document.body.querySelector("[name=total]").value = total;
+}
 
 {
     const select = document.body.querySelector("[name=manager]");
@@ -560,10 +579,14 @@ function initCompany(e) {
 function initProject () {
     switch(this.status) {
     case 200:
+        const deposit = document.body.querySelector("[name=deposit]")
+
         $.project = JSON.parse(this.responseText);
 
+        deposit.value = $.project.deposit;
+        deposit.onchange();
+
         document.body.querySelector("[name=name]").value = $.project.name;
-        document.body.querySelector("[name=deposit]").value = $.project.deposit;
         document.body.querySelector("[name=contract]").value = $.project.contract;
         document.body.querySelector("[name=start]").value = $.project.start;
         document.body.querySelector("[name=end]").value = $.project.end;

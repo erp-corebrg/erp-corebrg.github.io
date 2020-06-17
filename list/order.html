@@ -77,7 +77,7 @@ header form input {
 
 function createItem(project) {
     const item = document.createElement("tr");
-console.log(project);
+    
     item.appendChild(document.createElement("td")).textContent = project.origin;
     item.appendChild(document.createElement("th")).textContent = project.name;
     item.appendChild(document.createElement("td")).textContent = project.company;
