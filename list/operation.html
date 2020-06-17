@@ -111,7 +111,7 @@ function onSelectItem() {
 function onExport() {
 	const row = [];
 	
-	row[0] = "Date,Car,Team,Name,Before,After,Extra,Total,Comment";
+	row[0] = `"날짜","차량","부서","성명","운행전","운행후","비업무","운행거리","주차위치","연료잔량","비고"`;
 	
     [].forEach.call(document.getElementById("list").children, tr => {
         const col = [];

@@ -86,6 +86,38 @@ function createItem(company) {
     return item;
 }
 
+function onExport() {
+	const row = [];
+	
+	row[0] = `"회사명","사업자등록번호","대표자","주소지"`;
+	
+    [].forEach.call($.list.children, tr => {
+        const col = [];
+
+        [].forEach.call(tr.children, td => {
+            col.push(`"${td.textContent.replace(/\"/g, "'")}"`);
+        })
+
+        row.push(col.join(","));
+    });
+
+	download(new Blob(["\ufeff", row.join("\n")] ,{
+		type: "text/csv;charset=utf-8;"
+	}), "company.csv");
+}
+
+function download (blob, fileName) {
+    const a = document.createElement("a"),
+        event = document.createEvent("MouseEvent");
+        
+    a.setAttribute("download", fileName);
+    a.setAttribute("href", URL.createObjectURL(blob));
+    
+    event.initEvent("click", true, true);
+    
+    a.dispatchEvent(event);
+}
+
 function onSelectItem() {
     top.showDialog(`/dialog/company.html?id=${this.dataset.id}`);
 }
@@ -114,13 +146,19 @@ function onSearch (e) {
     document.body.classList.remove("loading");
 
     [].slice.call($.cache.children).forEach(e => {
-        if (e.children[0].textContent.indexOf(keyword) !== -1) {
-            df.appendChild(e);
+        if ([0].some(i => {
+            if (e.children[i].textContent.indexOf(keyword) !== -1) {
+                return true;
+            }})) {
+                df.appendChild(e);
         }
     });
 
     [].slice.call($.list.children).forEach(e => {
-        if (e.children[0].textContent.indexOf(keyword) !== -1) {
+        if ([0].some(i => {
+            if (e.children[i].textContent.indexOf(keyword) !== -1) {
+                return true;
+            }})) {
             df.appendChild(e);
         } else {
             $.cache.appendChild(e);
@@ -130,65 +168,6 @@ function onSearch (e) {
     $.list.appendChild(df);
 
     document.body.classList.remove("loading");
-}
-    
-function onSave() {
-	var baseMap = {},
-		etc = [],
-		row = [];
-	
-	row[0] = "Label,Name,Type,Address";
-	
-	if ($.customArray) {
-		$.customArray.forEach(function (custom) {
-			row[0] += (","+ custom);
-		});
-	}
-	
-	var node, label;
-
-	for (let id in $.nodeData) {
-		node = $.nodeData[id];
-
-		if (node.label) {
-			label = node.label.split(",")[0];
-			
-			if (!(label in baseMap)) {
-				baseMap[label] = [];
-			}
-
-			baseMap[label].push(node);
-		}
-		else {
-			etc.push(node);
-		}
-	}
-	
-	const keys = Object.keys(baseMap).sort(function (a, b) {
-		return a.localeCompare(b);
-	});
-
-	keys.push("");
-
-	baseMap[""] = etc;
-
-	keys.forEach(function (label) {
-		baseMap[label].forEach(function (node) {
-			const columns = [label, node.name, node.type, node.ip];
-
-			if ($.customArray) {
-				$.customArray.forEach(function (custom) {
-					columns.push("custom" in node? node.custom[custom] || "": "");
-				});
-			}
-
-			row.push(columns.join(","));
-		});
-	});
-
-	ITAhM.util.download(new Blob(["\ufeff", row.join("\n")] ,{
-		type: "text/csv;charset=utf-8;"
-	}), "node.csv");
 }
 
 function count() {
@@ -226,11 +205,11 @@ function showMessage(xhr) {
         <header>
             <nav>
                 <span class="button" title="Add Company" id="add">&#xf055;</span>
-                <span class="button" id="export" title="CSV 내보내기">&#xf019;</span>
+                <span class="button" id="export" title="CSV Export">&#xf019;</span>
             </nav>
             <form>
-                <input type="text" name="keyword" placeholder="IP, Type, Name">
-                <input type="submit" value="&#xf002; Search">
+                <input type="text" name="keyword">
+                <input type="submit" value="&#xf002;">
             </form>
         </header>
         <main>
@@ -268,6 +247,7 @@ const $ = {
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/company.html");
 document.getElementById("sort").onclick = onSort;
+document.getElementById("export").onclick = onExport;
 
 $.form.onsubmit = onSearch;
 

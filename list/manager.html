@@ -45,7 +45,7 @@ ul {
 	list-style: none;
 }
 
-tr >td:first-child {
+tbody th {
     text-align: center;
     color: #efefef;
     background-color: #28a745;
@@ -57,12 +57,6 @@ tr[data-disabled] >td:first-child {
 
 tr[data-disabled] {
 	color: #999;
-}
-
-#count {
-	font-size: 30px; font-weight: bold;
-	display: inline-block;
-	margin: 0 30px;
 }
 
 .button:hover {
@@ -86,10 +80,11 @@ body.keyword #list tr:not(.keyword) {
 function createItem(manager) {
     const item = document.createElement("tr");
 
-    item.appendChild(document.createElement("td")).textContent = manager.name;
+    item.appendChild(document.createElement("th")).textContent = manager.name;
     item.appendChild(document.createElement("td")).textContent = manager.company;
     item.appendChild(document.createElement("td")).textContent = manager.mobile;
     item.appendChild(document.createElement("td")).textContent = manager.email;
+    item.appendChild(document.createElement("td"));
 
     item.dataset.id = manager.id;
 
@@ -102,179 +97,52 @@ function onSelectItem() {
     top.showDialog(`/dialog/manager.html?id=${this.dataset.id}`);
 }
 
+
 function onSort (e) {
 	const
-		reverse = !this.classList.toggle("ascending"),
-		df = document.createDocumentFragment();
+        ascending = this.classList.toggle("ascending"),
+		df = document.createDocumentFragment(),
+        index = [].indexOf.call(this.parentNode.children, this);
 
     this.classList.add("sorted");
 
-	[].slice.call($.list.children).sort(reverse?
-		function (a, b) {
-			const
-				ipA = a.children[1].textContent,
-				ipB = b.children[1].textContent;
-			
-			if (ipA && ipB) {
-				return IP2Int(ipB) - IP2Int(ipA);
-			}
-			else if (ipB) {
-				return 1;
-			}
-			else if (ipA) {
-				return -1;
-			}
-			else {
-				return 0;
-			}
-		}:
-		function (a, b) {
-			const
-				ipA = a.children[1].textContent,
-				ipB = b.children[1].textContent;
-			
-			if (ipA && ipB) {
-				return IP2Int(ipA) - IP2Int(ipB);
-			}
-			else if (ipB) {
-				return 1;
-			}
-			else if (ipA) {
-				return -1;
-			}
-			else {
-				return 0;
-			}
-		}).forEach(function (e) {
-			df.appendChild(e);
-		});
+    [].slice.call($.list.children)
+        .sort((a, b) => a.children[index].textContent.localeCompare(b.children[index].textContent) * (ascending? 1: -1))
+        .forEach(e => df.appendChild(e));
 
 	$.list.appendChild(df);
 }
 
-function onSearch (e) {
-    e.preventDefault();
-    
-    document.body.classList.add("loading", "keyword");
-
-    const keyword = this.elements["keyword"].value;
-
-    if (!keyword) {
-        return $.form.reset();
-    }
-
-    const df = document.createDocumentFragment();
-    
-    for (let row, cols; row = $.list.firstElementChild;) {
-        cols = row.children;
-
-        df.appendChild(row);
-
-        for (var i=0, length=cols.length; i<length; i++) {
-            row.classList.remove("keyword");
-
-            if (cols[i].textContent.indexOf(keyword) !== -1) {
-                row.classList.add("keyword");
-                
-                break;
-            }
-        }
-    }
-    
-    $.list.appendChild(df);
-
-    document.body.classList.remove("loading");
-
-    document.getElementById("count").textContent = count();
-}
-
-function onReset(e) {
-    const df = document.createDocumentFragment();
-
-    document.body.classList.add("loading");
-    
-    for (let row; row = $.list.firstElementChild;) {
-        df.appendChild(row).classList.remove("keyword");
-    }
-
-    document.body.classList.remove("keyword");
-
-    $.list.appendChild(df);
-
-    document.body.classList.remove("loading");
-
-    document.getElementById("count").textContent = count();
-}
-    
-function onSave() {
-	var baseMap = {},
-		etc = [],
-		row = [];
+function onExport() {
+	const row = [];
 	
-	row[0] = "Label,Name,Type,Address";
+	row[0] = `"성명","회사","연락처","이메일"`;
 	
-	if ($.customArray) {
-		$.customArray.forEach(function (custom) {
-			row[0] += (","+ custom);
-		});
-	}
-	
-	var node, label;
+    [].forEach.call($.list.children, tr => {
+        const col = [];
 
-	for (let id in $.nodeData) {
-		node = $.nodeData[id];
+        [].forEach.call(tr.children, td => {
+            col.push(`"${td.textContent.replace(/\"/g, "'")}"`);
+        })
 
-		if (node.label) {
-			label = node.label.split(",")[0];
-			
-			if (!(label in baseMap)) {
-				baseMap[label] = [];
-			}
+        row.push(col.join(","));
+    });
 
-			baseMap[label].push(node);
-		}
-		else {
-			etc.push(node);
-		}
-	}
-	
-	const keys = Object.keys(baseMap).sort(function (a, b) {
-		return a.localeCompare(b);
-	});
-
-	keys.push("");
-
-	baseMap[""] = etc;
-
-	keys.forEach(function (label) {
-		baseMap[label].forEach(function (node) {
-			const columns = [label, node.name, node.type, node.ip];
-
-			if ($.customArray) {
-				$.customArray.forEach(function (custom) {
-					columns.push("custom" in node? node.custom[custom] || "": "");
-				});
-			}
-
-			row.push(columns.join(","));
-		});
-	});
-
-	ITAhM.util.download(new Blob(["\ufeff", row.join("\n")] ,{
+	download(new Blob(["\ufeff", row.join("\n")] ,{
 		type: "text/csv;charset=utf-8;"
-	}), "node.csv");
+	}), "manager.csv");
 }
 
-function count() {
-	var count = 0;
-
-	[].forEach.call($.list.children, function (row) {
-		if (row.offsetHeight > 0) {
-			count++;
-		}
-	});
-
-	return count;
+function download (blob, fileName) {
+    const a = document.createElement("a"),
+        event = document.createEvent("MouseEvent");
+        
+    a.setAttribute("download", fileName);
+    a.setAttribute("href", URL.createObjectURL(blob));
+    
+    event.initEvent("click", true, true);
+    
+    a.dispatchEvent(event);
 }
 
 function showMessage(xhr) {
@@ -302,26 +170,23 @@ function showMessage(xhr) {
                 <span class="button" id="add" title="Add Manager">&#xf055;</span>
                 <span class="button" id="export" title="CSV Export">&#xf019;</span>
             </nav>
-            <form>
-                <input type="text" name="keyword" placeholder="IP, Type, Name">
-                <input type="submit" value="&#xf002; 찾기">
-                <input type="reset" value="&#xf2f9; 초기화">
-            </form>
         </header>
         <main>
             <table>
                 <colgroup>
-                    <col>
-                    <col width="200">
                     <col width="160">
+                    <col width="300">
                     <col width="200">
+                    <col width="200">
+                    <col>
                 </colgroup>
                 <thead>
                     <tr id="header">
-                        <th>Name</th>
-                        <th>Company</th>
-                        <th>Mobile</th>
+                        <th class="sort">Name</th>
+                        <th class="sort">Company</th>
+                        <th>Contact</th>
                         <th>Email</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="list"></tbody>
@@ -341,9 +206,9 @@ const $ = {
     };
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/manager.html");
+document.getElementById("export").onclick = onExport;
 
-$.form.onsubmit = onSearch;
-$.form.onreset = onReset;
+[].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);
 
 function initManager(e) {
     switch(this.status) {
@@ -356,7 +221,7 @@ function initManager(e) {
             df.appendChild(createItem(mgrData[id]));
         }
 
-        document.getElementById("list").appendChild(df);
+        $.list.appendChild(df);
 
         document.body.classList.remove("loading");
 
