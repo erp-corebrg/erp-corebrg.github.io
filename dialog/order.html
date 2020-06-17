@@ -127,15 +127,18 @@ function getDateString(date) {
 function onSaveInvoice() {
     document.body.classList.add("loading");
 
+    const td = this.children;
+
     $.request.execute({
         command: "set",
         target: "invoice",
         id: Number(this.dataset.id),
         invoice: {
-            expect: this.children[0].querySelector("input").value || undefined,
-            issue: this.children[1].querySelector("input").value || undefined,
-            complete: this.children[2].querySelector("input").value || undefined,
-            amount: this.children[3].querySelector("input").value || 0
+            expect: td[0].querySelector("input").value || undefined,
+            issue: td[1].querySelector("input").value || undefined,
+            complete: td[2].querySelector("input").value || undefined,
+            amount: td[3].querySelector("input").value || 0,
+            comment: td[4].querySelector("input").value
         }
     }, function () {
         switch (this.status) {
@@ -200,6 +203,7 @@ function createItem(invoice) {
     tr.appendChild(remove).classList.add("remove", "function");
 
     amount.value = invoice.amount;
+    comment.value = invoice.comment;
 
     if ("expect" in invoice) {
         expect.value = invoice.expect;
@@ -224,7 +228,7 @@ function createItem(invoice) {
     return tr;
 }
 
-function onSave() {
+function onSaveOrder() {
     const project = {};
 
     if ([].every.call(document.body.querySelectorAll("[required]"), e => {
@@ -262,7 +266,7 @@ function onSave() {
     }
 }
 
-function onRemove () {
+function onRemoveOrder () {
     if (!confirm(CONFIRM_REMOVE["kr"])) {
         return;
     }
@@ -292,31 +296,21 @@ function onRemove () {
 }
 
 function onAddSale() {
-    $.request.execute({
-        command: "add",
-        target: "invoice",
-        invoice: {
-            type: 1,
-            project: $.id
-        }
-    }, function () {
-        switch (this.status) {
-        case 200:
-            window.location.reload();
-
-            break;
-        default:
-            showMessage(this);
-        }
-    });
+    addInvoice(1);
 }
 
 function onAddBuy() {
+    addInvoice(2);
+}
+
+function addInvoice(type) {
+    document.body.classList.add("loading");
+    
     $.request.execute({
         command: "add",
         target: "invoice",
         invoice: {
-            type: 2,
+            type: type,
             project: $.id
         }
     }, function () {
@@ -365,6 +359,12 @@ function showMessage (xhr) {
             </colgroup>
             <tbody>
                 <tr>
+                    <th>고객사</th>
+                    <td>
+                        <div id="origin"></div>
+                    </td>
+                </tr>
+                <tr>
                     <th>프로젝트 명</th>
                     <td><input type="text" name="name" required></td>
                 </tr>
@@ -396,7 +396,7 @@ function showMessage (xhr) {
                     </td>
                 </tr>
                 <tr>
-                    <th>고객사</th>
+                    <th>발주처</th>
                     <td class="flex">
                         <div id="company"></div>
                         <select name="manager" required></select>
@@ -470,8 +470,8 @@ const
         id: Number(search.get("id")) || undefined
     };
 
-document.getElementById("save").onclick = onSave;
-document.getElementById("remove").onclick = onRemove;
+document.getElementById("save").onclick = onSaveOrder;
+document.getElementById("remove").onclick = onRemoveOrder;
 document.getElementById("reload").onclick = e => window.location.reload();
 document.getElementById("close").onclick = e => top.closeDialog();
 document.getElementById("add_sale").onclick = onAddSale;
@@ -525,7 +525,7 @@ document.getElementById("add_buy").onclick = onAddBuy;
         $.request.execute({
             command: "get",
             target: "manager",
-            company: $.select.value
+            company: $.company.value
         }, initManager);
     }
 }
@@ -533,13 +533,21 @@ document.getElementById("add_buy").onclick = onAddBuy;
 function initCompany(e) {
     switch (this.status) {
     case 200:
-        $.select = new Select({
+        const companyData = JSON.parse(this.responseText);
+
+        $.origin = new Select({
+            id: "origin",
+            attr: "name",
+            data: companyData
+        });
+        
+        $.company = new Select({
             id: "company",
             attr: "name",
-            data: JSON.parse(this.responseText)
+            data: companyData
         });
 
-        $.select.addEventListener("change", resetManager);
+        $.company.addEventListener("change", resetManager);
 
         initialize();
 
@@ -562,7 +570,8 @@ function initProject () {
         document.body.querySelector("[name=content]").value = $.project.content;
         document.body.querySelector("[name=payment]").value = $.project.payment;
         
-        $.select.value = $.project.company;
+        $.company.value = $.project.company;
+        $.origin.value = $.project.origin;
 
         break;
     default:

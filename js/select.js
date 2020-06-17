@@ -1,15 +1,16 @@
 ;"use strict";
 {
     function Select(args) {
+        this.text = document.createElement("input");
+        this.input = document.createElement("input");
+        this.details = document.createElement("details");
+        this.map = {};
+        this.listener = {};
+
         this.initialize(args);
     }
 
     Select.prototype = {
-        text: document.createElement("input"),
-        input: document.createElement("input"),
-        details: document.createElement("details"),
-        map: {},
-        listener: {},
         initialize: function (args) {
             const
                 select = document.getElementById(args.id),

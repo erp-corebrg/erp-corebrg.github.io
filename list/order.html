@@ -10,18 +10,18 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
-#sort::after {
+.sort::after {
     font-family: "Font Awesome 5 Free";
     content: "\f0dc";
 	cursor: pointer;
     position: absolute; right: 3px;
 }
 
-#sort.sorted::after {
+.sort.sorted::after {
 	content: "\f0de";
 }
 
-#sort.ascending::after {
+.sort.ascending::after {
 	content: "\f0dd";
 }
 
@@ -54,7 +54,7 @@ tbody th {
     background-color: #28a745;
 }
 
-tbody td:nth-child(3) {
+tbody td:nth-child(4) {
     text-align: right;
 }
 
@@ -71,20 +71,19 @@ header form input {
     font-family: "Font Awesome 5 Free";
 }
 
-
 		</style>
 
 		<script>
 
 function createItem(project) {
     const item = document.createElement("tr");
-
+console.log(project);
+    item.appendChild(document.createElement("td")).textContent = project.origin;
     item.appendChild(document.createElement("th")).textContent = project.name;
     item.appendChild(document.createElement("td")).textContent = project.company;
     item.appendChild(document.createElement("td")).textContent = project.deposit.toLocaleString();
     item.appendChild(document.createElement("td")).textContent = project.contract;
     item.appendChild(document.createElement("td")).textContent = project.payment;
-    item.appendChild(document.createElement("td"));
     item.appendChild(document.createElement("td"));
 
     item.dataset.id = project.id;
@@ -101,12 +100,13 @@ function onSelectItem() {
 function onSort (e) {
 	const
         ascending = this.classList.toggle("ascending"),
-		df = document.createDocumentFragment();
+		df = document.createDocumentFragment(),
+        index = [].indexOf.call(this.parentNode.children, this);
 
     this.classList.add("sorted");
 
     [].slice.call($.list.children)
-        .sort((a, b) => a.children[0].textContent.localeCompare(b.children[0].textContent) * (ascending? 1: -1))
+        .sort((a, b) => a.children[index].textContent.localeCompare(b.children[index].textContent) * (ascending? 1: -1))
         .forEach(e => df.appendChild(e));
 
 	$.list.appendChild(df);
@@ -232,22 +232,25 @@ function showMessage(xhr) {
         <main>
             <table>
                 <colgroup>
+                    <col width="260">
                     <col width="400">
-                    <col width="200">
+                    <col width="260">
                     <col width="120">
                     <col width="120">
                     <col width="100">
                 </colgroup>
                 <thead>
                     <tr id="header">
-                        <th id="sort">
+                        <th class="sort">
+                            고객사
+                        </th>
+                        <th class="sort">
                             프로젝트
                         </th>
                         <th>발주처</th>
                         <th>계약금액</th>
                         <th>계약일</th>
                         <th>지급조건</th>
-                        <th></th>
                         <th></th>
                     </tr>
                 </thead>
@@ -270,7 +273,7 @@ const $ = {
     };
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/order.html");
-document.getElementById("sort").onclick = onSort;
+[].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);
 
 $.form.onsubmit = onSearch;
 
