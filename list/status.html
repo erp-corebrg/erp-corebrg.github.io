@@ -182,7 +182,7 @@ function createItem(invoice) {
 
     tr.appendChild(document.createElement("td"));
     tr.appendChild(document.createElement("th")).textContent = invoice.pName;
-    tr.appendChild(document.createElement("td")).textContent = invoice.amount.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = (invoice.amount + invoice.tax).toLocaleString();
     tr.appendChild(document.createElement("td")).textContent = invoice.expect;
     tr.appendChild(document.createElement("td")).textContent = invoice.issue;
     tr.appendChild(document.createElement("td")).textContent = invoice.complete;
@@ -278,7 +278,7 @@ function showMessage (xhr) {
             <table>
                 <colgroup>
                     <col width="50">
-                    <col width="500">
+                    <col width="400">
                     <col width="100">
                     <col width="120">
                     <col width="120">
@@ -305,7 +305,7 @@ function showMessage (xhr) {
             <table>
                 <colgroup>
                     <col width="50">
-                    <col width="500">
+                    <col width="400">
                     <col width="100">
                     <col width="120">
                     <col width="120">
