@@ -48,8 +48,12 @@ ul {
 	list-style: none;
 }
 
+table {
+    counter-reset: index;
+}
+
 tbody th {
-    text-align: center;
+    text-align: left;
     color: #efefef;
 }
 
@@ -66,17 +70,22 @@ td.warning {
     background-color: rgba(220, 53, 69, 0.5);
 }
 
-.button {
-    font-size: 2em;
+tbody td,
+tbody th {
+    padding: 0.4em;
 }
 
-.button:hover {
-    color: #fcba30;
-    transition: color 0.5s linear;
+tbody td:first-child {
+    text-align: center;
 }
 
-header form input {
-    font-family: "Font Awesome 5 Free";
+tbody td:nth-child(3) {
+    text-align: right;
+}
+
+tbody td:first-child::before {
+    content: counter(index);
+    counter-increment: index;
 }
 
 		</style>
@@ -164,7 +173,9 @@ function createItem(invoice) {
 
     const tr = document.createElement("tr");
 
-    tr.appendChild(document.createElement("th")).textContent = invoice.amount.toLocaleString();
+    tr.appendChild(document.createElement("td"));
+    tr.appendChild(document.createElement("th")).textContent = invoice.pName;
+    tr.appendChild(document.createElement("td")).textContent = invoice.amount.toLocaleString();
     tr.appendChild(document.createElement("td")).textContent = invoice.expect;
     tr.appendChild(document.createElement("td")).textContent = invoice.issue;
     tr.appendChild(document.createElement("td")).textContent = invoice.complete;
@@ -204,7 +215,7 @@ function onChangeStatus () {
         cache.filter(tr => {
             var bytes = 0;
             
-            [3, 2, 1].forEach (bit => {
+            [5, 4, 3].forEach (bit => {
                 bytes <<= 1;
                 bytes |= tr.children[bit].textContent? 1: 0;
             });
@@ -263,15 +274,19 @@ function showMessage (xhr) {
         <main>
             <table>
                 <colgroup>
-                    <col width="200">
-                    <col width="200">
-                    <col width="200">
-                    <col width="200">
-                    <col width="160">
+                    <col width="50">
+                    <col width="500">
+                    <col width="100">
+                    <col width="120">
+                    <col width="120">
+                    <col width="120">
+                    <col width="80">
                     <col>
                 </colgroup>
                 <thead>
                     <tr>
+                        <th></th>
+                        <th>사업명</th>
                         <th>거래 금액</th>
                         <th class="sort">발급 예정일</th>
                         <th class="sort">계산서 발급일</th>
@@ -286,15 +301,19 @@ function showMessage (xhr) {
         <main>
             <table>
                 <colgroup>
-                    <col width="200">
-                    <col width="200">
-                    <col width="200">
-                    <col width="200">
-                    <col width="160">
+                    <col width="50">
+                    <col width="500">
+                    <col width="100">
+                    <col width="120">
+                    <col width="120">
+                    <col width="120">
+                    <col width="80">
                     <col>
                 </colgroup>
                 <thead>
                     <tr>
+                        <th></th>
+                        <th>사업명</th>
                         <th>거래 금액</th>
                         <th class="sort">발급 예정일</th>
                         <th class="sort">계산서 발급일</th>
