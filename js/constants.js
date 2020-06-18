@@ -17,7 +17,7 @@ const
         kr: "Information.\n\n비밀번호 변경 완료."
     },
     INFO_REQUEST_COMPLETE = {
-        kr: "Information.\n\n요청이 정상적으로 처리되었습니다."
+        kr: "Information.\n\n요청 정상 처리."
     },
     ERROR_INVALID_ACCESS = {
         kr: "Error!\n\n잘못된 접근.\n"

@@ -31,12 +31,6 @@ h3 {
     border-bottom: 1px solid #777777;
 }
 
-h3 >i {
-    font-size: 0.8em;
-    display: block;
-    float: right;
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
@@ -109,12 +103,14 @@ input[type=submit] {
 }
 
 .button.remove,
-#remove {
+#remove,
+#buy {
     color: #dc3545;
 }
 
 .button.add,
-#save {
+#save,
+#sale {
     color: #28a745;
 }
 
@@ -148,11 +144,14 @@ function onSaveInvoice() {
             issue: td[1].querySelector("input").value || undefined,
             complete: td[2].querySelector("input").value || undefined,
             amount: td[3].querySelector("input").value || 0,
-            comment: td[4].querySelector("input").value
+            tax: td[4].querySelector("input").value || 0,
+            comment: td[5].querySelector("input").value
         }
     }, function () {
         switch (this.status) {
         case 200:
+            setSummary();
+
             alert(INFO_REQUEST_COMPLETE["kr"]);
 
             break;
@@ -182,6 +181,8 @@ function onRemoveInvoice() {
         case 200:
             tr.parentNode.removeChild(tr);
 
+            setSummary();
+
             alert(INFO_REQUEST_COMPLETE["kr"]);
 
             break;
@@ -200,6 +201,7 @@ function createItem(invoice) {
         complete = document.createElement("input"),
         issue = document.createElement("input"),
         amount = document.createElement("input"),
+        tax = document.createElement("input"),
         comment = document.createElement("input"),
         save = document.createElement("td"),
         remove = document.createElement("td");
@@ -208,11 +210,16 @@ function createItem(invoice) {
     tr.appendChild(document.createElement("td")).appendChild(issue).type = "date";
     tr.appendChild(document.createElement("td")).appendChild(complete).type = "date";
     tr.appendChild(document.createElement("td")).appendChild(amount).type = "number";
+    tr.appendChild(document.createElement("td")).appendChild(tax).type = "number";
     tr.appendChild(document.createElement("td")).appendChild(comment).type = "text";
     tr.appendChild(save).classList.add("save", "function");
     tr.appendChild(remove).classList.add("remove", "function");
 
     amount.value = invoice.amount;
+    amount.onchange = e => tax.value = amount.value *0.1;
+
+    tax.value = invoice.tax || 0;
+    
     comment.value = invoice.comment;
 
     if ("expect" in invoice) {
@@ -263,6 +270,10 @@ function onSaveOrder() {
             switch (this.status) {
             case 200:
                 if ($.id) {
+                    top.resetDialog();
+
+                    alert(INFO_REQUEST_COMPLETE["kr"]);
+
                     document.body.classList.remove("loading");
                 } else {
                     top.closeDialog(true);
@@ -303,6 +314,25 @@ function onRemoveOrder () {
             showMessage(this);
         }
     });
+}
+
+function setSummary() {
+    var
+        sale = 0,
+        buy = 0;
+
+    [].forEach.call(document.getElementById("list_sale").children, tr => {
+        sale += Number(tr.querySelector("[type=number]").value);
+    });
+
+    [].forEach.call(document.getElementById("list_buy").children, tr => {
+        buy += Number(tr.querySelector("[type=number]").value);
+    });
+
+    document.getElementById("sale").textContent = sale.toLocaleString();
+    document.getElementById("buy").textContent = buy.toLocaleString();
+    document.getElementById("profit").textContent = (sale - buy).toLocaleString();
+    document.getElementById("rate").textContent = `${((sale - buy) /sale *100).toFixed(2)}%`;
 }
 
 function onAddSale() {
@@ -404,7 +434,7 @@ function showMessage (xhr) {
                 <tr>
                     <th>계약 내용</th>
                     <td>
-                        <textarea rows="10" name="content" required></textarea>
+                        <textarea rows="6" name="content" required></textarea>
                     </td>
                 </tr>
                 <tr>
@@ -417,17 +447,20 @@ function showMessage (xhr) {
             </tbody>
         </table>
         <section>
+            <h2>
+                매출합계: <span id="sale"></span> 매입합계: <span id="buy"></span> 영업이익: <span id="profit"></span> / <span id="rate"></span>
+            </h2>
             <h3>
                 매출
                 <span class="button add" title="매출 아이템 추가" id="add_sale">&#xf055;</span>
-                <i>(부가세 포함)</i>
             </h3>
             <table>
                 <colgroup>
                     <col width="160">
                     <col width="160">
                     <col width="160">
-                    <col width="120">
+                    <col width="100">
+                    <col width="90">
                     <col>
                     <col width="20">
                     <col width="20">
@@ -438,6 +471,7 @@ function showMessage (xhr) {
                         <th>계산서발행</th>
                         <th>입금</th>
                         <th>금액</th>
+                        <th>부가세</th>
                         <th colspan="3">비고</th>
                     </tr>
                 </thead>
@@ -446,14 +480,14 @@ function showMessage (xhr) {
             <h3>
                 매입
                 <span class="button add" title="매입 아이템 추가" id="add_buy">&#xf055;</span>
-                <i>(부가세 포함)</i>
             </h3>
             <table>
                 <colgroup>
                     <col width="160">
                     <col width="160">
                     <col width="160">
-                    <col width="120">
+                    <col width="100">
+                    <col width="90">
                     <col>
                     <col width="20">
                     <col width="20">
@@ -464,6 +498,7 @@ function showMessage (xhr) {
                         <th>계산서발행</th>
                         <th>출금</th>
                         <th>금액</th>
+                        <th>부가세</th>
                         <th colspan="3">비고</th>
                     </tr>
                 </thead>
@@ -627,6 +662,8 @@ function initInvoice() {
 
         document.getElementById("list_sale").appendChild(dfS);
         document.getElementById("list_buy").appendChild(dfB);
+
+        setSummary();
 
         $.request.execute({
             command: "get",

@@ -220,6 +220,7 @@ const $ = {
     };
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/order.html");
+
 [].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);
 
 $.form.onsubmit = onSearch;

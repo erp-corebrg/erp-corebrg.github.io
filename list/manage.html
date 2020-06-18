@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		
+		<title>CeRP</title>
+		
+		<style>
+@import "/css/style.css";
+@import "/css/list.css";
+@import "/css/fa.css";
+
+.sort::after {
+    font-family: "Font Awesome 5 Free";
+    content: "\f0dc";
+	cursor: pointer;
+    position: absolute; right: 3px;
+}
+
+.sort.sorted::after {
+	content: "\f0de";
+}
+
+.sort.ascending::after {
+	content: "\f0dd";
+}
+
+header input,
+header select {
+	padding: .5em;
+}
+
+nav {
+	display: flex;
+	align-items: center;
+}
+
+nav> div {
+	margin-right: 5px;
+}
+
+nav >img {
+	cursor: pointer;
+}
+
+ul {
+	margin: 0; padding: 0;
+	list-style: none;
+}
+
+tbody th {
+    text-align: center;
+    color: #efefef;
+}
+
+#list_sale th {
+    background-color: #28a745;
+}
+
+#list_buy th {
+    background-color: #dc3545;
+}
+
+td.warning {
+    font-weight: bold;
+    background-color: rgba(220, 53, 69, 0.5);
+}
+
+.button {
+    font-size: 2em;
+}
+
+.button:hover {
+    color: #fcba30;
+    transition: color 0.5s linear;
+}
+
+header form input {
+    font-family: "Font Awesome 5 Free";
+}
+
+		</style>
+
+        <script>
+
+function Cache () {
+    this.initialize(arguments);
+}           
+
+Cache.prototype = {
+    initialize: function (args) {
+        this.cache = document.createDocumentFragment();
+        this.table = args[0];
+    },
+    backup: function (tr) {
+        this.cache.appendChild(tr);
+    },
+    restore: function () {
+        this.table.appendChild(this.cache);
+    },
+    filter: function (fn) {
+        const cache = document.createDocumentFragment();
+
+        [].slice.call(this.cache.children)
+            .forEach(tr => {
+                if (fn(tr)) {
+                    cache.appendChild(tr);
+                }
+            });
+
+        [].slice.call(this.table.children)
+            .forEach(tr => {
+                (fn(tr)? cache: this.cache)["appendChild"] (tr);
+                
+            });
+
+        this.table.appendChild(cache);
+    }
+};
+
+        </script>
+		<script>
+
+function initInvoice(e) {
+    switch(this.status) {
+    case 200:
+        const invoiceData = JSON.parse(this.responseText);
+
+        for (let id in invoiceData) {
+            createItem(invoiceData[id]);
+        }
+
+        $.cache.forEach(cache => cache.restore());
+
+        document.body.querySelector("[name=status]").onchange();
+
+        document.body.classList.remove("loading");
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
+function createItem(invoice) {
+    var status;
+
+    if (invoice.complete) {
+    } else if (invoice.issue) {
+        const date = Math.ceil((new Date() - new Date(invoice.issue)) /1000 /3600 /24);
+        
+        if (date > 0) {
+            status = `+${date}`;
+        }
+    } else if (invoice.expect) {
+        const date = Math.ceil((new Date() - new Date(invoice.expect)) /1000 /3600 /24);
+        
+        if (date > 0) {
+            status = `+${date}`;
+        }
+    } else {
+        return;
+    }
+
+    const tr = document.createElement("tr");
+
+    tr.appendChild(document.createElement("th")).textContent = invoice.amount.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = invoice.expect;
+    tr.appendChild(document.createElement("td")).textContent = invoice.issue;
+    tr.appendChild(document.createElement("td")).textContent = invoice.complete;
+
+    if (status) {
+        const td = tr.appendChild(document.createElement("td"));
+
+        td.textContent = status;
+
+        td.classList.add("warning");
+    } else {
+        tr.appendChild(document.createElement("td")).textContent = "정상";
+    }
+    
+    tr.appendChild(document.createElement("td")).textContent = invoice.comment;
+
+    tr.dataset.id = invoice.project;
+    
+    tr.onclick = onSelectItem;
+
+    $.cache[invoice.type -1].backup(tr);
+}
+
+function onSelectItem () {
+    top.showDialog(`/dialog/order.html?id=${this.dataset.id}`);
+}
+
+function onChangeStatus () {
+    var status = 0;
+
+    for (let i=0; i<this.value; i++) {
+        status <<= 1;
+        status |= 1;
+    }
+    
+    $.cache.forEach(cache => {
+        cache.filter(tr => {
+            var bytes = 0;
+            
+            [3, 2, 1].forEach (bit => {
+                bytes <<= 1;
+                bytes |= tr.children[bit].textContent? 1: 0;
+            });
+
+            return status === bytes;
+        });
+    });
+}
+
+function onSort (e) {
+	const
+        ascending = this.classList.toggle("ascending"),
+        df = document.createDocumentFragment(),
+        tr = this.parentNode,
+        list = tr.parentNode.parentNode.querySelector("tbody"),
+        index = [].indexOf.call(tr.children, this);
+
+    this.classList.add("sorted");
+
+    [].slice.call(list.children)
+        .sort((a, b) => a.children[index].textContent.localeCompare(b.children[index].textContent) * (ascending? 1: -1))
+        .forEach(e => df.appendChild(e));
+
+	list.appendChild(df);
+}
+
+function showMessage (xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+		
+	</head>
+	
+	<body class="loading">
+        <header>
+            <nav>
+                <select name="status">
+                    <option value="1" selected>예정</option>
+                    <option value="2">미수</option>
+                    <option value="3">확정</option>
+                </select>
+            </nav>
+        </header>
+        <main>
+            <table>
+                <colgroup>
+                    <col width="200">
+                    <col width="200">
+                    <col width="200">
+                    <col width="200">
+                    <col width="160">
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>거래 금액</th>
+                        <th class="sort">발급 예정일</th>
+                        <th class="sort">계산서 발급일</th>
+                        <th class="sort">지급 확정일</th>
+                        <th>상태</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody id="list_sale"></tbody>
+            </table>
+        </main>
+        <main>
+            <table>
+                <colgroup>
+                    <col width="200">
+                    <col width="200">
+                    <col width="200">
+                    <col width="200">
+                    <col width="160">
+                    <col>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>거래 금액</th>
+                        <th class="sort">발급 예정일</th>
+                        <th class="sort">계산서 발급일</th>
+                        <th class="sort">지급 확정일</th>
+                        <th>상태</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody id="list_buy"></tbody>
+            </table>
+        </main>
+		
+		<div class="bg_loading"></div>
+		
+        <script src="/js/request.js"></script>
+        <script src="/js/constants.js"></script>
+		<script>
+
+const $ = {
+        request: new Request(),
+        list: document.getElementById("list"),
+        cache: [new Cache(document.getElementById("list_sale")), new Cache(document.getElementById("list_buy"))]
+    };
+
+document.body.querySelector("[name=status]").onchange = onChangeStatus;
+
+[].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);
+
+$.request.execute({
+    command: "get",
+    target: "invoice"
+}, initInvoice);
+        </script>
+	
+	</body>
+	
+</html>

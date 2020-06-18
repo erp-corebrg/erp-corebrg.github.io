@@ -21,7 +21,7 @@ main {
 
 table {
     table-layout: fixed;
-    /*border-collapse: collapse;*/
+    border-collapse: collapse;
     width: 100%;
 }
 

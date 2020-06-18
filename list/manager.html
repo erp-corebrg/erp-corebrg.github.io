@@ -87,7 +87,7 @@ function createItem(manager) {
     item.appendChild(document.createElement("td"));
 
     item.dataset.id = manager.id;
-
+item.title = manager.id;
     item.onclick = onSelectItem;
 
     return item;
