@@ -10,6 +10,13 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
+[name=status] {
+    position: absolute; top: 0.5em; left: 0.5em;
+    z-index: 9;
+    padding: 0.5em;
+    border: 5px solid #fcba30;
+}
+
 .sort::after {
     font-family: "Font Awesome 5 Free";
     content: "\f0dc";
@@ -262,15 +269,11 @@ function showMessage (xhr) {
 	</head>
 	
 	<body class="loading">
-        <header>
-            <nav>
-                <select name="status">
-                    <option value="1" selected>예정</option>
-                    <option value="2">미수</option>
-                    <option value="3">확정</option>
-                </select>
-            </nav>
-        </header>
+        <select name="status">
+            <option value="1" selected>예정</option>
+            <option value="2">미수</option>
+            <option value="3">확정</option>
+        </select>
         <main>
             <table>
                 <colgroup>
