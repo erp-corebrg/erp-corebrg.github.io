@@ -10,13 +10,6 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
-[name=status] {
-    position: absolute; top: 0.5em; left: 0.5em;
-    z-index: 9;
-    padding: 0.5em;
-    border: 5px solid #fcba30;
-}
-
 .sort::after {
     font-family: "Font Awesome 5 Free";
     content: "\f0dc";
@@ -64,11 +57,11 @@ tbody th {
     color: #efefef;
 }
 
-#list_sale th {
+#list th {
     background-color: #28a745;
 }
 
-#list_buy th {
+#list tr.buy th {
     background-color: #dc3545;
 }
 
@@ -96,59 +89,20 @@ tbody td:first-child::before {
 }
 
 		</style>
-
-        <script>
-
-function Cache () {
-    this.initialize(arguments);
-}           
-
-Cache.prototype = {
-    initialize: function (args) {
-        this.cache = document.createDocumentFragment();
-        this.table = args[0];
-    },
-    backup: function (tr) {
-        this.cache.appendChild(tr);
-    },
-    restore: function () {
-        this.table.appendChild(this.cache);
-    },
-    filter: function (fn) {
-        const cache = document.createDocumentFragment();
-
-        [].slice.call(this.cache.children)
-            .forEach(tr => {
-                if (fn(tr)) {
-                    cache.appendChild(tr);
-                }
-            });
-
-        [].slice.call(this.table.children)
-            .forEach(tr => {
-                (fn(tr)? cache: this.cache)["appendChild"] (tr);
-                
-            });
-
-        this.table.appendChild(cache);
-    }
-};
-
-        </script>
 		<script>
 
 function initInvoice(e) {
     switch(this.status) {
     case 200:
-        const invoiceData = JSON.parse(this.responseText);
+        const
+            invoiceData = JSON.parse(this.responseText),
+            df = document.createDocumentFragment();
 
         for (let id in invoiceData) {
-            createItem(invoiceData[id]);
+            df.appendChild(createItem(invoiceData[id]));
         }
 
-        $.cache.forEach(cache => cache.restore());
-
-        document.body.querySelector("[name=status]").onchange();
+        document.getElementById("list").appendChild(df);
 
         document.body.classList.remove("loading");
 
@@ -159,6 +113,7 @@ function initInvoice(e) {
 }
 
 function createItem(invoice) {
+    const tr = document.createElement("tr");
     var status;
 
     if (invoice.complete) {
@@ -177,8 +132,6 @@ function createItem(invoice) {
     } else {
         return;
     }
-
-    const tr = document.createElement("tr");
 
     tr.appendChild(document.createElement("td"));
     tr.appendChild(document.createElement("th")).textContent = invoice.pName;
@@ -200,36 +153,27 @@ function createItem(invoice) {
     tr.appendChild(document.createElement("td")).textContent = invoice.comment;
 
     tr.dataset.id = invoice.project;
-    
+    console.log(invoice.type);
+    if (invoice.type === 2) {
+        tr.classList.add("buy");
+    }
+
     tr.onclick = onSelectItem;
 
-    $.cache[invoice.type -1].backup(tr);
+    return tr;
 }
 
 function onSelectItem () {
     top.showDialog(`/dialog/order.html?id=${this.dataset.id}`);
 }
 
-function onChangeStatus () {
-    var status = 0;
-
-    for (let i=0; i<this.value; i++) {
-        status <<= 1;
-        status |= 1;
-    }
+function onChangeCondition () {
+    const
+        type = document.body.querySelector("[name=type]").value,
+        status = document.body.querySelector("[name=status]").value,
+        expect = document.body.querySelector("[name=date]:checked").value;
     
-    $.cache.forEach(cache => {
-        cache.filter(tr => {
-            var bytes = 0;
-            
-            [5, 4, 3].forEach (bit => {
-                bytes <<= 1;
-                bytes |= tr.children[bit].textContent? 1: 0;
-            });
-
-            return status === bytes;
-        });
-    });
+    window.location.replace(`/list/status.html?type=${type}&status=${status}&expect=${expect}`);
 }
 
 function onSort (e) {
@@ -269,11 +213,36 @@ function showMessage (xhr) {
 	</head>
 	
 	<body class="loading">
-        <select name="status">
-            <option value="1" selected>예정</option>
-            <option value="2">미수</option>
-            <option value="3">확정</option>
-        </select>
+        <header>
+            <nav>
+                <select name="type">
+                    <option value="1" selected>매출</option>
+                    <option value="2">매입</option>
+                    <option value="0">모두</option>
+                </select>
+                <select name="status">
+                    <option value="1" selected>예정</option>
+                    <option value="2">미수</option>
+                    <option value="3">확정</option>
+                </select>
+                <label>
+                    <input type="radio" name="date" value="1" checked>
+                    1개월
+                </label>
+                <label>
+                    <input type="radio" name="date" value="2">
+                    2개월
+                </label>
+                <label>
+                    <input type="radio" name="date" value="3">
+                    3개월
+                </label>
+                <label>
+                    <input type="radio" name="date" value="0">
+                    전체
+                </label>
+            </nav>
+        </header>
         <main>
             <table>
                 <colgroup>
@@ -298,34 +267,7 @@ function showMessage (xhr) {
                         <th>비고</th>
                     </tr>
                 </thead>
-                <tbody id="list_sale"></tbody>
-            </table>
-        </main>
-        <main>
-            <table>
-                <colgroup>
-                    <col width="50">
-                    <col width="400">
-                    <col width="100">
-                    <col width="120">
-                    <col width="120">
-                    <col width="120">
-                    <col width="80">
-                    <col>
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>사업명</th>
-                        <th>거래 금액</th>
-                        <th class="sort">발급 예정일</th>
-                        <th class="sort">계산서 발급일</th>
-                        <th class="sort">지급 확정일</th>
-                        <th>상태</th>
-                        <th>비고</th>
-                    </tr>
-                </thead>
-                <tbody id="list_buy"></tbody>
+                <tbody id="list"></tbody>
             </table>
         </main>
 		
@@ -335,19 +277,38 @@ function showMessage (xhr) {
         <script src="/js/constants.js"></script>
 		<script>
 
-const $ = {
+const
+    search = new URLSearchParams(window.location.search),
+    $ = {
         request: new Request(),
-        list: document.getElementById("list"),
-        cache: [new Cache(document.getElementById("list_sale")), new Cache(document.getElementById("list_buy"))]
+        type: search.has("type")? Number(search.get("type")): 1,
+        status: Number(search.get("status")) || 1,
+        expect: search.has("expect")? Number(search.get("expect")): 1,
+        list: document.getElementById("list")
     };
 
-document.body.querySelector("[name=status]").onchange = onChangeStatus;
-
+["type", "status"].forEach(name => document.body.querySelector(`[name=${name}]`).onchange = onChangeCondition);
+[].forEach.call(document.body.querySelectorAll("[name=date]"), e => e.onchange = onChangeCondition);
 [].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);
+
+document.body.querySelector("[name=type]").value = $.type;
+document.body.querySelector("[name=status]").value = $.status;
+document.body.querySelector(`[name=date][value="${$.expect}"]`).checked = true;
 
 $.request.execute({
     command: "get",
-    target: "invoice"
+    target: "invoice",
+    type: $.type,
+    status: $.status,
+    expect: $.expect? (d => {
+        d.setMonth(d.getMonth() +$.expect);
+
+        const
+            mm = d.getMonth() +1,
+            dd = d.getDate();
+
+        return `${d.getFullYear()}-${mm > 9? mm: "0"+ mm}-${dd > 9? dd: "0"+ dd}`;
+    })(new Date()): undefined
 }, initInvoice);
         </script>
 	
