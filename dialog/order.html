@@ -87,7 +87,7 @@ textarea {
 
 .icon,
 input[type=submit] {
-    font-family: 'Font Awesome 5 Free', Arial, Tahoma;
+    font-family: "Font Awesome 5 Free", Arial, Tahoma;
 }
 
 #company {
@@ -95,12 +95,42 @@ input[type=submit] {
 }
 
 #close {
-    font-family: 'Font Awesome 5 Free';
+    font-family: "Font Awesome 5 Free";
 }
 
 [name=manager] {
     flex: none;
     width: initial;
+}
+
+#attach {
+    border: 10px solid #ddd;
+    padding: 1em;
+    margin: 0;
+    list-style: none;
+}
+
+#attach.drop {
+    border-color: #34495e;
+    border-style: dotted;
+}
+
+#attach li {
+    cursor: pointer;
+}
+
+#attach li span {
+    display: inline-block; margin-left: 1em;
+    cursor: default;
+}
+
+#attach li:hover {
+    text-decoration: underline;
+}
+
+#attach li:hover span::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00d";
 }
 
 .button.remove,
@@ -115,6 +145,7 @@ input[type=submit] {
     color: #28a745;
 }
 
+#attach li:not(:hover) span,
 body:not(.edit) section,
 body:not(.edit) #remove {
     display: none;
@@ -333,7 +364,10 @@ function setSummary() {
     document.getElementById("sale").textContent = sale.toLocaleString();
     document.getElementById("buy").textContent = buy.toLocaleString();
     document.getElementById("profit").textContent = (sale - buy).toLocaleString();
-    document.getElementById("rate").textContent = `${((sale - buy) /sale *100).toFixed(2)}%`;
+    
+    if (sale > 0) {
+        document.getElementById("rate").textContent = `${((sale - buy) /sale *100).toFixed(2)}%`;
+    }
 }
 
 function onAddSale() {
@@ -364,6 +398,92 @@ function addInvoice(type) {
             showMessage(this);
         }
     });
+}
+
+function upload(files) {
+    const file = files.pop();
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            $.request.upload({
+                id: $.id,
+                name: file.name,
+                type: "project",
+                file: reader.result
+            }, function () {
+                switch (this.status) {
+                case 200:
+                    upload(files);
+                
+                    break;
+                default:
+                    showMessage(this);
+                }
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
+    } else {
+        window.location.reload();
+    }
+}
+
+function download(e) {
+    const li = this;
+
+    if(e.target === li) {
+        document.body.classList.add("loading");
+
+        $.request.download({
+            id: li.dataset.id,
+            name: li.dataset.name,
+        }, function () {
+            switch(this.status) {
+            case 200:
+                document.body.classList.remove("loading");
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    } else if (confirm(CONFIRM_REMOVE["kr"])) {
+        document.body.classList.add("loading");
+        
+        $.request.execute({
+            command: "remove",
+            target: "file",
+            id: li.dataset.id
+        }, function () {
+            switch(this.status) {
+            case 200:
+                document.getElementById("attach").removeChild(li);
+
+                document.body.classList.remove("loading");
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    }
+}
+
+function createAttach(file) {
+    const li = document.createElement("li");
+
+    li.textContent = file.name;
+
+    li.dataset.id = file.id;
+    li.dataset.name = file.name;
+
+    li.appendChild(document.createElement("span"));
+
+    li.onclick = download;
+
+    return li;
 }
 
 function showMessage (xhr) {
@@ -448,8 +568,12 @@ function showMessage (xhr) {
             </tbody>
         </table>
         <section>
+            <h3>
+                파일
+            </h3>
+            <ul id="attach"></ul>
             <h2>
-                매출합계: <span id="sale"></span> 매입합계: <span id="buy"></span> 영업이익: <span id="profit"></span> / <span id="rate"></span>
+                매출합계: <span id="sale">0</span> 매입합계: <span id="buy">0</span> 영업이익: <span id="profit">0</span> / <span id="rate">0%</span>
             </h2>
             <h3>
                 매출
@@ -526,6 +650,36 @@ document.getElementById("reload").onclick = e => window.location.reload();
 document.getElementById("close").onclick = e => top.closeDialog();
 document.getElementById("add_sale").onclick = onAddSale;
 document.getElementById("add_buy").onclick = onAddBuy;
+
+{
+    const attach = document.getElementById("attach");
+
+    attach.addEventListener("dragover", e => {
+        e.preventDefault();
+    });
+
+    attach.addEventListener("dragenter", e => {
+        e.preventDefault();
+
+        attach.classList.add("drop");
+    });
+
+    attach.addEventListener("dragleave", e => {
+        e.preventDefault();
+
+        attach.classList.remove("drop");
+    });
+
+    attach.addEventListener("drop", e => {
+        e.preventDefault();
+        
+        attach.classList.remove("drop");
+
+        document.body.classList.add("loading");
+
+        upload([].slice.call(e.dataTransfer.files));
+    });
+}
 
 document.body.querySelector("[name=deposit]").onchange = function () {
     const
@@ -642,6 +796,31 @@ function initProject () {
     }
 }
 
+function initAttach() {
+    switch(this.status) {
+    case 200:
+        const
+            fileData = JSON.parse(this.responseText),
+            df = document.createDocumentFragment();
+
+        for (let id in fileData) {
+            df.appendChild(createAttach(fileData[id]));
+        }
+
+        document.getElementById("attach").appendChild(df);
+
+        $.request.execute({
+            command: "get",
+            target: "project",
+            id: $.id
+        }, initProject);
+
+        break;
+    default:
+        showMessage(this);
+    }
+}
+
 function initInvoice() {
     switch(this.status) {
     case 200:
@@ -665,12 +844,13 @@ function initInvoice() {
         document.getElementById("list_buy").appendChild(dfB);
 
         setSummary();
-
+        
         $.request.execute({
             command: "get",
-            target: "project",
-            id: $.id
-        }, initProject);
+            target: "file",
+            type: "project",
+            tid: $.id
+        }, initAttach);
 
         break;
     default:

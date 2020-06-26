@@ -192,6 +192,54 @@ function Request() {
             } catch (e) {}
 
             return true;
+        },
+        upload: function (request, callback) {
+            const xhr = new XMLHttpRequest();
+                
+            xhr.open("PUT", `${this.agent}/${request.name}`, true);
+            xhr.withCredentials = true;
+    
+            xhr.setRequestHeader("Session", this.session);
+            xhr.setRequestHeader("File-Id", request.id);
+            xhr.setRequestHeader("File-Target", request.type);
+
+            xhr.onloadend = callback;
+    
+            xhr.send(request.file);
+        },
+        download: function (request, callback) {
+            const xhr = new XMLHttpRequest();
+                
+            xhr.open("POST", this.agent, true);
+            xhr.withCredentials = true;
+            xhr.responseType = "blob";
+    
+            xhr.setRequestHeader("Session", this.session);
+            
+            xhr.onloadend = function (e) {
+                if (xhr.status == 200) {
+                    const
+                        a = document.createElement("a"),
+                        event = document.createEvent("MouseEvent");
+                    
+                    a.setAttribute("download", request.name);
+                    a.setAttribute("href", URL.createObjectURL(new Blob([xhr.response] ,{
+                        
+                    })));
+                    
+                    event.initEvent("click", true, true);
+                    
+                    a.dispatchEvent(event);
+                }
+
+                callback.call(xhr, e);
+            };
+    
+            xhr.send(JSON.stringify({
+                command: "get",
+                target: "file",
+                id: request.id
+            }));
         }
     };
 }
