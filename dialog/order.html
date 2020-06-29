@@ -378,6 +378,16 @@ function onAddBuy() {
     addInvoice(2);
 }
 
+function onCancelDate (e) {
+    if (e.keyCode === 27) {
+        const date = e.target;
+
+        if (date.type === "date") {
+            date.value = "";
+        }
+    }
+}
+
 function addInvoice(type) {
     document.body.classList.add("loading");
     
@@ -650,6 +660,8 @@ document.getElementById("reload").onclick = e => window.location.reload();
 document.getElementById("close").onclick = e => top.closeDialog();
 document.getElementById("add_sale").onclick = onAddSale;
 document.getElementById("add_buy").onclick = onAddBuy;
+document.getElementById("list_sale").onkeydown = onCancelDate;
+document.getElementById("list_buy").onkeydown = onCancelDate;
 
 {
     const attach = document.getElementById("attach");
