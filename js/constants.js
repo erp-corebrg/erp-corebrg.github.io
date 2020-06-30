@@ -22,6 +22,11 @@ const
     ERROR_INVALID_ACCESS = {
         kr: "Error!\n\n잘못된 접근.\n"
     },
+    ERROR_INCONST_AMOUNT = (...args) => {
+        return {
+            kr: `Error!\n\n계약금액 ${args[0].toLocaleString()}과\n매출합계 ${args[1].toLocaleString()} 불일치.`
+        }
+    },
     ERROR_REMOVE_RESTRICT = {
         kr: "Error!\n\n사용중인 정보는 삭제할수 없습니다.\n"
     },

@@ -14,17 +14,29 @@ body {
     border: 1px solid #777777;
     background-color: #ffffff;
     z-index: 9;
+    position: relative;
 }
 
 header {
-    font-size: 2em;
     user-select: none;
     display: flex; justify-content: space-between;
+    position: absolute; top: 0; right: 0; left: 0;
+    padding: 0.5em;
+    pointer-events: none;
 }
 
 h1 {
     text-align: center;
     margin: 0;
+}
+
+h1 span {
+    position: relative;
+}
+
+#sign {
+    position: absolute; top: 0; left: -20px;
+    cursor: pointer;
 }
 
 h3 {
@@ -95,6 +107,8 @@ input[type=submit] {
 }
 
 #close {
+    font-size: 2em;
+    pointer-events: all;
     font-family: "Font Awesome 5 Free";
 }
 
@@ -133,18 +147,40 @@ input[type=submit] {
     content: "\f00d";
 }
 
+nav {
+    pointer-events: all;
+}
+
+nav .button {
+    border-radius: 50%;
+    line-height: 2em; width: 2em;
+    text-align: center;
+    color: #ffffff;
+}
+
+#save {
+    background-color: #28a745;
+}
+
+#remove {
+    background-color: #dc3545;
+}
+
+#reload {
+    background-color: #34495e;
+}
+
 .button.remove,
-#remove,
 #buy {
     color: #dc3545;
 }
 
 .button.add,
-#save,
 #sale {
     color: #28a745;
 }
 
+h1:not(:hover) #sign,
 #attach li:not(:hover) span,
 body:not(.edit) section,
 body:not(.edit) #remove {
@@ -226,6 +262,16 @@ function onRemoveInvoice() {
     });
 }
 
+function sort(src) {
+    const df = document.createDocumentFragment();
+
+    [].slice.call(src.children)
+        .sort((a, b) => a.children[0].querySelector("input").value.localeCompare(b.children[0].querySelector("input").value))
+        .forEach(e => df.appendChild(e));
+
+    return df;
+}
+
 function createItem(invoice) {
     const
         tr = document.createElement("tr"),
@@ -275,6 +321,47 @@ function createItem(invoice) {
     tr.dataset.id = invoice.id;
 
     return tr;
+}
+
+function onSign() {
+    const deposit = Number(document.body.querySelector("[name=deposit]").value);
+
+    if (!deposit) {
+        return document.body.querySelector("[name=deposit]").focus();
+    }
+
+    var sale = 0;
+
+    if (![].every.call(document.getElementById("list_sale").children, tr => {
+        if ([].every.call(tr.querySelectorAll("[type=date]"), input => {
+            if (input.value) {
+                return true;
+            } else {
+                return input.focus();
+            }})) {
+                sale += Number(tr.querySelector("[type=number]").value);
+
+                return true;
+            }
+        })) {
+        return;
+    }
+    
+    if (sale !== deposit) {
+        return alert(ERROR_INCONST_AMOUNT(deposit, sale)["kr"]);
+    }
+
+    if (![].every.call(document.getElementById("list_buy").children, tr => {
+        return [].every.call(tr.querySelectorAll("[type=date]"), input => {
+            return input.value? true: input.focus();
+        });
+    })) {
+        return;
+    }
+
+    if (!confirm("Confirm.\n\n프로젝트를 완료합니까?")) {
+        return;
+    }
 }
 
 function onSaveOrder() {
@@ -522,7 +609,12 @@ function showMessage (xhr) {
             </nav>
             <span id="close" title="Close Document" class="button">&#xf00d;</span>
         </header>
-        <h1>수주보고서</h1>
+        <h1>
+            수주보고서
+            <span>
+                <img src="/img/sign.png" id="sign" width="60" height="60">
+            </span>
+        </h1>
         <h3>계약 정보</h3>
         <table>
             <colgroup>
@@ -654,6 +746,7 @@ const
         id: Number(search.get("id")) || undefined
     };
 
+document.getElementById("sign").onclick = onSign;
 document.getElementById("save").onclick = onSaveOrder;
 document.getElementById("remove").onclick = onRemoveOrder;
 document.getElementById("reload").onclick = e => window.location.reload();
@@ -852,8 +945,8 @@ function initInvoice() {
             }
         }
 
-        document.getElementById("list_sale").appendChild(dfS);
-        document.getElementById("list_buy").appendChild(dfB);
+        document.getElementById("list_sale").appendChild(sort(dfS));
+        document.getElementById("list_buy").appendChild(sort(dfB));
 
         setSummary();
         
