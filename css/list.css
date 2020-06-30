@@ -58,3 +58,8 @@ tbody tr {
 tbody tr:nth-child(odd) {
 	background-color: #ebebeb;
 }
+
+tbody th,
+tbody td {
+    padding: 0.4em;
+}
