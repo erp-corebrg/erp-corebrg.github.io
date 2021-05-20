@@ -154,10 +154,12 @@ body:not(.root) li.root {
         </style>
         <script>
 
-function showDialog(src) {
+function showDialog(src, opener) {
     const dialog = document.getElementById("dialog");
 
     dialog.onload = function () {
+        $.opener = opener;
+
 		document.body.classList.add("dialog");
 	};
 
@@ -165,11 +167,21 @@ function showDialog(src) {
 }
 
 function closeDialog(reset) {
+    const dialog = document.getElementById("dialog");
+
     document.body.classList.remove("dialog");
+
+    dialog.onload = undefined;
     
-    if (reset) {
-        resetDialog();
-    }
+    dialog.src = "about:blank";
+
+    reset && resetOpener();
+
+    delete $.opener;
+}
+
+function resetOpener() {
+    $.opener && $.opener.location.reload();
 }
 
 function resetDialog() {
@@ -247,10 +259,10 @@ function onSignOut() {
                         <label>고객 관리</label>
                         <ul>
                             <li>
-                                <a href="/list/company.html" target="content"">기업</a>
+                                <a href="/list/company.html" target="content">기업</a>
                             </li>
                             <li>
-                                <a href="/list/manager.html" target="content"">담당자</a>
+                                <a href="/list/manager.html" target="content">담당자</a>
                             </li>
                         </ul>
                     </li>
@@ -294,13 +306,15 @@ function onSignOut() {
             <iframe id="dialog"></iframe>
         </section>
         <section class="signin">
-            <iframe src="/connect.html"></iframe>
+            <!--iframe src="/connect.html"></iframe-->
         </section>
         
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
         <script>
 const $ = {};
+
+alert("DB 마이그레이션 작업으로 인해 접근할 수 없습니다.\n연구소장에게 문의 하세요.");
 
 document.getElementById("password").onclick = e => document.querySelector("details").removeAttribute("open");
 
