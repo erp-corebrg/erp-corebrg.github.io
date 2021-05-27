@@ -8,7 +8,6 @@ body {
 
 header {
     flex: none;
-	padding: 1em;
 	display: flex;
     justify-content: space-between;
     user-select: none;
@@ -30,18 +29,43 @@ tbody tr {
     cursor: pointer;
 }
 
+thead th.sort {
+    pointer-events: none;
+}
+
+thead th.sort::after {
+    pointer-events: all;
+    font-family: "Font Awesome 5 Free";
+	content: "\f0dc";
+	cursor: pointer;
+	position: absolute; right: 3px;
+}
+
+thead th.ascend::after {
+	content: "\f0de";
+}
+
+thead th.descend::after {
+	content: "\f0dd";
+}
+
 thead th {
     background-color: #34495e;
     color: #efefef;
     position: sticky; top: 0;
+    border-right: 1px solid #34495e;
 }
 
 thead th:not(:last-of-type) {
-    border-right: 1px solid rgba(52, 73, 94, 0.8);
+    border-right-color: #dddddd;
+}
+
+thead tr {
+    border-bottom: 1px solid #34495e;
 }
 
 thead tr:not(:last-of-type) {
-    border-bottom: 1px solid rgba(52, 73, 94, 0.8);
+    border-bottom-color: #dddddd;
 }
 
 th,

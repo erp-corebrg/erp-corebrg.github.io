@@ -136,9 +136,9 @@ function createItem(invoice) {
     tr.appendChild(document.createElement("td"));
     tr.appendChild(document.createElement("th")).textContent = invoice.pName;
     tr.appendChild(document.createElement("td")).textContent = (invoice.amount + invoice.tax).toLocaleString();
-    tr.appendChild(document.createElement("td")).textContent = invoice.expect;
-    tr.appendChild(document.createElement("td")).textContent = invoice.issue;
-    tr.appendChild(document.createElement("td")).textContent = invoice.complete;
+    tr.appendChild(document.createElement("td")).textContent = invoice.expect || "";
+    tr.appendChild(document.createElement("td")).textContent = invoice.issue? "완료": "";
+    tr.appendChild(document.createElement("td")).textContent = invoice.complete || "";
 
     if (status) {
         const td = tr.appendChild(document.createElement("td"));
@@ -153,8 +153,8 @@ function createItem(invoice) {
     tr.appendChild(document.createElement("td")).textContent = invoice.comment;
 
     tr.dataset.id = invoice.project;
-    
-    if (invoice.type === 2) {
+
+    if (invoice.invoice) {
         tr.classList.add("buy");
     }
 
@@ -164,7 +164,7 @@ function createItem(invoice) {
 }
 
 function onSelectItem () {
-    top.showDialog(`/dialog/order.html?id=${this.dataset.id}`);
+    top.showDialog(`/dialog/order.html?id=${this.dataset.id}`, window);
 }
 
 function onChangeCondition () {
@@ -198,6 +198,8 @@ function showMessage (xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -260,9 +262,9 @@ function showMessage (xhr) {
                         <th></th>
                         <th>사업명</th>
                         <th>거래 금액</th>
-                        <th class="sort">발급 예정일</th>
-                        <th class="sort">계산서 발급일</th>
-                        <th class="sort">지급 확정일</th>
+                        <th class="sort">계산서</th>
+                        <th>발급</th>
+                        <th class="sort">입출금</th>
                         <th>상태</th>
                         <th>비고</th>
                     </tr>
@@ -271,7 +273,7 @@ function showMessage (xhr) {
             </table>
         </main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
 		
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>

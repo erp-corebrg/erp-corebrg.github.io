@@ -10,37 +10,9 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
-#sort::after {
-    font-family: "Font Awesome 5 Free";
-    content: "\f0dc";
-	cursor: pointer;
-    position: absolute; right: 3px;
-}
-
-#sort.sorted::after {
-	content: "\f0de";
-}
-
-#sort.ascending::after {
-	content: "\f0dd";
-}
-
-header input,
-header select {
+header input {
 	padding: .5em;
-}
-
-nav {
-	display: flex;
-	align-items: center;
-}
-
-nav> div {
-	margin-right: 5px;
-}
-
-nav >img {
-	cursor: pointer;
+    font-family: "Font Awesome 5 Free";
 }
 
 ul {
@@ -67,10 +39,6 @@ tbody td:first-child {
 .button:hover {
     color: #fcba30;
     transition: color 0.5s linear;
-}
-
-header form input {
-    font-family: "Font Awesome 5 Free";
 }
 
 tr.hidden,
@@ -166,6 +134,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -183,8 +153,8 @@ function showMessage(xhr) {
 	<body class="loading">
         <header>
             <nav>
-                <span class="button" id="add" title="Add Item">&#xf055;</span>
-                <span class="button" id="export" title="CSV Export">&#xf019;</span>
+                <input type="button" value="&#xf067; Add" id="add" title="Add Item">
+                <input type="button" value="&#xf019; Export" id="export" title="CSV Export">
             </nav>
         </header>
         <main>
@@ -230,7 +200,7 @@ function showMessage(xhr) {
             </table>
         </main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
 		
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
@@ -238,8 +208,7 @@ function showMessage(xhr) {
 
 const $ = {
         request: new Request(),
-        list: document.getElementById("list"),
-        form: document.querySelector("form")
+        list: document.getElementById("list")
     };
 
 document.getElementById("add").onclick = e => top.showDialog("/dialog/operation.html");

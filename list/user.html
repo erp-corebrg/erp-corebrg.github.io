@@ -85,6 +85,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     case 403:
         alert(NOTICE_NO_AUTH["kr"]);

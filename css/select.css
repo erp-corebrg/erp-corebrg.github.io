@@ -41,8 +41,9 @@
     background-color: transparent;
 }
 
-.select summary::-webkit-details-marker {
-  display: none;
+.select summary::marker {
+    content: "";
+    display: none;
 }
 
 .select nav {
@@ -70,6 +71,7 @@
 .select form input[type=submit] {
     font-family: 'Font Awesome 5 Free';
     flex: none;
+    width: auto; height: auto;
 }
 
 .select ul {

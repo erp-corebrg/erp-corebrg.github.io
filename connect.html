@@ -66,15 +66,7 @@ input[type=submit] {
     outline: none;
 }
 
-.bg_loading {
-	position: fixed; top: 0; right: 0; bottom: 0; left: 0;
-	background: #4d525a url("/img/loading.gif") no-repeat center;
-	background-size: 32px 32px;
-	opacity: .5;
-}
-
-body.ready,
-body:not(.loading) .bg_loading {
+body.ready {
     display: none;
 }
 
@@ -104,7 +96,7 @@ body:not(.loading) .bg_loading {
             </h1>
 		</main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
 
 		<script src="/js/request.js"></script>
         <script>

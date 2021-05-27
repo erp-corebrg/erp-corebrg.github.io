@@ -161,6 +161,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -251,7 +253,7 @@ function showMessage(xhr) {
                     <input type="reset" value="&#xf2ed; Remove">
                     <input type="submit" value="&#xf00c; Apply">
                 </footer>
-                <div class="bg_loading"></div>
+                <div class="loading mask"></div>
             </form>
         </main>
         <script src="/js/request.js"></script>

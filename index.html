@@ -102,8 +102,9 @@ summary {
     outline: none;
 }
 
-summary::-webkit-details-marker {
-  display: none;
+summary::marker {
+    content: "";
+    display: none;
 }
 
 .popup {
@@ -145,7 +146,6 @@ summary::-webkit-details-marker {
 .hidden,
 body.authorized section.signin,
 body:not(.authorized) section.erp,
-body:not(.loading) .bg_loading,
 body:not(.dialog) #dialog,
 body:not(.root) li.root {
 	display: none;
@@ -306,7 +306,7 @@ function onSignOut() {
             <iframe id="dialog"></iframe>
         </section>
         <section class="signin">
-            <!--iframe src="/connect.html"></iframe-->
+            <iframe src="/connect.html"></iframe>
         </section>
         
         <script src="/js/request.js"></script>
@@ -314,7 +314,7 @@ function onSignOut() {
         <script>
 const $ = {};
 
-alert("DB 마이그레이션 작업으로 인해 접근할 수 없습니다.\n연구소장에게 문의 하세요.");
+//alert("DB 마이그레이션 작업으로 인해 접근할 수 없습니다.\n연구소장에게 문의 하세요.");
 
 document.getElementById("password").onclick = e => document.querySelector("details").removeAttribute("open");
 

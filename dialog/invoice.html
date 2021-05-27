@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>CeRP</title>
+        <style>
+
+@import "/css/style.css";
+@import "/css/select.css";
+@import "/css/fa.css";
+
+body {
+    position: fixed; inset: 0 0 0 0;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column;
+}
+
+section {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+th {
+    background-color: #34495e;
+    color: #efefef;
+    padding: 0.5em 0;
+    border-bottom: 1px solid #dddddd;
+    position: sticky; top: 0;
+}
+
+th:not(:last-of-type) {
+    border-right: 1px solid #dddddd;
+}
+
+td input {
+    padding: 0.5em;
+    box-sizing: border-box;
+    width: 100%; height: 100%;
+}
+
+#list td {
+    padding: 0.5em;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+#list tr {
+    cursor: pointer;
+}
+
+#list tr:nth-child(even) {
+    background-color: #efefef;
+}
+
+input[type=button],
+input[type=submit],
+input[type=reset] {
+    font-family: "Font Awesome 5 Free", "맑은 고딕";
+    padding: 0.5em;
+}
+
+input[type=number] {
+    text-align: right;
+}
+
+dialog {
+    width: 400px;
+    background-color: #fefefe;
+    border: 1px solid #dddddd;
+}
+
+dialog::backdrop {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+/*
+dialog:not(.edit) input[type=reset] {
+    display: none;
+}
+*/
+dialog:not([data-id]) input[type=reset],
+body:not([data-id]) >h2,
+body:not([data-id]) >section {
+    display: none;
+}
+        </style>
+        <script>
+
+function onSaveItem (e) {
+    e.preventDefault();
+
+    const
+        elements = document.getElementById("sale").elements,
+        id = Number(document.body.dataset.id);
+
+    $.request.execute({
+        command: isNaN(id)? "add": "set",
+        target: "invoice",
+        id: isNaN(id)? undefined: id,
+        invoice: {
+            amount: Number(elements["amount"].value),
+            tax: Number(elements["tax"].value),
+            expect: elements["expect"].value || undefined,
+            issue: elements["expect"].disabled? elements["expect"].value: undefined,
+            complete: elements["complete"].value || undefined,
+            comment: elements["comment"].value,
+            project: $.project
+        }
+    }, function (e) {
+        switch (this.status) {
+            case 200:
+                break;
+            default:
+                throw showMessage(this);
+        }
+
+        parent.location.reload();
+    });
+}
+
+function onRemoveItem (e) {
+    e.preventDefault();
+}
+
+function initForm (form) {
+    form.elements["amount"].onchange = function (e) {
+        form.elements["tax"].value = Math.round(Number(this.value) * 0.1);
+    };
+
+    form.elements["expect"].onchange = function (e) {
+        form.elements["issue"].disabled = false;
+    };
+
+    form.elements["issue"].onclick = function (e) {
+        if (form.elements["expect"].disabled) {
+            form.elements["expect"].disabled = false;
+
+            this.value = "\uf00c 확정";
+        } else if (form.elements["expect"].value) {
+            form.elements["expect"].disabled = true;
+
+            this.value = "\uf2ea 취소";
+        }
+    };
+}
+
+function setInvoice (invoice = {}) {
+    const elements = document.getElementById("buy").elements;
+
+    $.company.value = invoice.company;
+
+    elements["amount"].value = invoice.amount || 0;
+    elements["tax"].value = invoice.tax || 0;
+
+    /** 초기화 **/
+    elements["expect"].value = "";
+    elements["expect"].disabled = false;
+    elements["issue"].value = "\uf00c 확정";
+    elements["complete"].value = "";
+    /** **/
+
+    if (invoice.expect) {
+        elements["expect"].value = invoice.expect;
+
+        if (invoice.issue) {
+            elements["expect"].disabled = true;
+            elements["issue"].value = "\uf2ea 취소";
+
+            elements["complete"].value = invoice.complete || "";
+        }
+    }
+
+    elements["comment"].value = invoice.comment || "";
+}
+
+function onEditItem () {
+    const
+        dialog = document.body.querySelector("dialog"),
+        id = this.dataset.id;
+
+    if (id) {
+        setInvoice($.map[id]);
+
+        dialog.dataset.id = id;
+    } else {
+        setInvoice();
+
+        delete dialog.dataset.id;
+    }
+
+    dialog.showModal();
+}
+
+function onSaveBuy (e) {
+    e.preventDefault();
+
+    const
+        elements = document.getElementById("buy").elements,
+        dialog = document.body.querySelector("dialog"),
+        id = Number(dialog.dataset.id);
+
+    document.body.classList.add("loading");
+
+    dialog.close();
+
+    $.request.execute({
+        command: isNaN(id)? "add": "set",
+        target: "invoice",
+        id: isNaN(id)? undefined: id,
+        invoice: {
+            amount: Number(elements["amount"].value),
+            tax: Number(elements["tax"].value),
+            expect: elements["expect"].value || undefined,
+            issue: elements["expect"].disabled? elements["expect"].value: undefined,
+            complete: elements["complete"].value || undefined,
+            comment: elements["comment"].value,
+            project: $.project,
+            invoice: Number(document.body.dataset.id),
+            company: $.company.value || undefined
+        }
+    }, function (e) {
+        switch (this.status) {
+            case 200:
+                break;
+            default:
+                throw showMessage(this);
+        }
+
+        parent.location.reload();
+    });
+}
+
+function onRemoveBuy (e) {
+    e.preventDefault();
+
+    if (!confirm(CONFIRM_REMOVE_ITEM["kr"])) {
+        return;
+    }
+
+    
+}
+
+function onClose (e) {
+    e.preventDefault();
+
+    document.body.querySelector("dialog").close();
+}
+
+function showMessage(xhr) {
+    switch (xhr.status) {
+    case 401:
+        alert(NOTICE_SESSION_EXPIRED["kr"]);
+
+        top.location.reload();
+
+        break;
+    default:
+        alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
+    }
+
+    try {
+        console.log(JSON.parse(xhr.responseText).error);
+    } catch (e) {}
+}
+
+		</script>
+    </head>
+    <body class="loading">
+        <form id="sale">
+            <h2>매출
+                <input type="submit" value="&#xf0c7; Save" title="Save Item">
+                <input type="reset" value="&#xf1f8; Remove" title="Remove Item">
+            </h2>
+            <table>
+                <colgroup>
+                    <col>
+                    <col>
+                    <col>
+                    <col width="100">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>금액</th>
+                        <th>부가세</th>
+                        <th>계산서</th>
+                        <th>발급</th>
+                        <th>입금</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="number" name="amount" min="0" value="0" required>
+                        </td>
+                        <td>
+                            <input type="number" name="tax" min="0" value="0" required>
+                        </td>
+                        <td>
+                            <input type="date" name="expect" required>
+                        </td>
+                        <td>
+                            <input type="button" name="issue" value="&#xf00c; 확정">
+                        </td>
+                        <td>
+                            <input type="date" name="complete">
+                        </td>
+                        <td>
+                            <input type="text" name="comment">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </form>
+        <h2>매입
+            <input type="button" value="&#xf067; Add" id="add" title="Add Item">
+        </h2>
+        <section>
+            <table>
+                <colgroup>
+                    <col>
+                    <col>
+                    <col>
+                    <col>
+                    <col width="100">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>공급자</th>
+                        <th>금액</th>
+                        <th>부가세</th>
+                        <th>계산서</th>
+                        <th>발급</th>
+                        <th>출금</th>
+                        <th>비고</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </section>
+        <dialog>
+            <form id="buy">
+                <h2>
+                    <input type="submit" value="&#xf0c7; Save" title="Save Item">
+                    <input type="reset" value="&#xf1f8; Remove" title="Remove Item">
+                    <input type="button" value="&#xf00d; Close" name="close" title="Close Dialog">
+                </h2>
+                <table>
+                    <colgroup>
+                        <col width="120">
+                        <col>
+                        <col width="80">
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>공급자</th>
+                            <td colspan="2">
+                                <div id="company"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>금액</th>
+                            <td colspan="2">
+                                <input type="number" name="amount" min="0" value="0" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>부가세</th>
+                            <td colspan="2">
+                                <input type="number" name="tax" min="0" value="0" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>계산서</th>
+                            <td>
+                                <input type="date" name="expect" required>
+                            </td>
+                            <td>
+                                <input type="button" name="issue" value="&#xf00c; 확정">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>출금</th>
+                            <td colspan="2">
+                                <input type="date" name="complete">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>비고</th>
+                            <td colspan="2">
+                                <input type="text" name="comment">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </form>
+        </dialog>
+        <div class="loading mask"></div>
+
+        <script src="/js/request.js"></script>
+        <script src="/js/select.js"></script>
+        <script src="/js/constants.js"></script>
+        <script>
+
+const $ = {
+        request: new Request(),
+        map: {}
+    };
+
+document.getElementById("add").onclick = onEditItem;
+
+{
+    const form = document.getElementById("sale");
+    
+    form.onsubmit = onSaveItem;
+    form.onreset = onRemoveItem;
+
+    initForm(form);
+}
+
+{
+    const form = document.getElementById("buy");
+    
+    form.onsubmit = onSaveBuy;
+    form.onreset = onRemoveBuy;
+    form.elements["close"].onclick = onClose;
+
+    initForm(form);
+}
+
+function initCompany(e) {
+    switch (this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
+
+    const companyData = JSON.parse(this.responseText);
+
+    $.company = new Select({
+        id: "company",
+        key: "name",
+        data: companyData
+    });
+
+    document.body.classList.remove("loading");
+}
+
+function initialize () {
+    $.project = arguments[0];
+
+    if (arguments.length > 1) {
+        const
+            elements = document.getElementById("sale").elements,
+            sale = arguments[1].sale,
+            buy = arguments[1].buy;
+        
+        elements["amount"].value = sale.amount;
+        elements["tax"].value = sale.tax;
+        
+        if (sale.expect) {
+            elements["expect"].value = sale.expect;
+
+            if (sale.issue) {
+                elements["expect"].disabled = true;
+
+                elements["issue"].value = "\uf2ea 취소";
+            }
+        }
+
+        if (Array.isArray(buy)) {
+            const df = document.createDocumentFragment();
+
+            buy.forEach(invoice => {
+                const
+                    tr = document.createElement("tr"),
+                    td = document.createElement("td");
+
+                td.title = invoice.company;
+
+                tr.appendChild(td).textContent = invoice.cName;
+                tr.appendChild(document.createElement("td")).textContent = invoice.amount;
+                tr.appendChild(document.createElement("td")).textContent = invoice.tax;
+                tr.appendChild(document.createElement("td")).textContent = invoice.expect || "";
+                tr.appendChild(document.createElement("td")).textContent = invoice.issue? "확정": "";
+                tr.appendChild(document.createElement("td")).textContent = invoice.complete || "";
+                tr.appendChild(document.createElement("td")).textContent = invoice.comment || "";
+
+                tr.dataset.id = invoice.id;
+
+                tr.onclick = onEditItem;
+
+                $.map[String(invoice.id)] = invoice;
+
+                df.appendChild(tr);
+            });
+
+            document.getElementById("list").appendChild(df);
+        }
+
+        document.body.dataset.id = sale.id;
+    }
+
+    $.request.execute({
+        command: "get",
+        target: "company"
+    }, initCompany);
+}
+        </script>
+    </body>
+
+</html>

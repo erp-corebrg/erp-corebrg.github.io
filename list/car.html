@@ -10,20 +10,10 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
-nav {
-	display: flex;
-	align-items: center;
+header input {
+	padding: .5em;
+    font-family: "Font Awesome 5 Free";
 }
-
-.button {
-    font-size: 2em;
-}
-
-.button:hover {
-    color: #fcba30;
-    transition: color 0.5s linear;
-}
-
 
 		</style>
 
@@ -73,6 +63,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -90,7 +82,7 @@ function showMessage(xhr) {
 	<body class="loading">
         <header>
             <nav>
-                <span class="button" id="add" title="Add Item">&#xf055;</span>
+                <input type="button" value="&#xf067; Add" id="add" title="Add Item">
             </nav>
         </header>
         <main>
@@ -111,7 +103,7 @@ function showMessage(xhr) {
             </table>
         </main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
 		
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>

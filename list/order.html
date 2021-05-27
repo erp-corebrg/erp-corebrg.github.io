@@ -10,24 +10,10 @@
 @import "/css/list.css";
 @import "/css/fa.css";
 
-.sort::after {
-    font-family: "Font Awesome 5 Free";
-    content: "\f0dc";
-	cursor: pointer;
-    position: absolute; right: 3px;
-}
-
-.sort.sorted::after {
-	content: "\f0de";
-}
-
-.sort.ascending::after {
-	content: "\f0dd";
-}
-
-header input,
-header select {
+header input {
 	padding: .5em;
+    height: 100%; box-sizing: border-box;
+    font-family: "Font Awesome 5 Free";
 }
 
 nav {
@@ -58,19 +44,6 @@ tbody td:nth-child(4) {
     text-align: right;
 }
 
-.button {
-    font-size: 2em;
-}
-
-.button:hover {
-    color: #fcba30;
-    transition: color 0.5s linear;
-}
-
-header form input {
-    font-family: "Font Awesome 5 Free";
-}
-
 		</style>
 
 		<script>
@@ -82,8 +55,8 @@ function createItem(project) {
     item.appendChild(document.createElement("th")).textContent = project.name;
     item.appendChild(document.createElement("td")).textContent = project.company;
     item.appendChild(document.createElement("td")).textContent = project.deposit.toLocaleString();
-    item.appendChild(document.createElement("td")).textContent = project.contract;
-    item.appendChild(document.createElement("td")).textContent = project.payment;
+    item.appendChild(document.createElement("td")).textContent = project.start;
+    item.appendChild(document.createElement("td")).textContent = project.end;
     item.appendChild(document.createElement("td"));
 
     item.dataset.id = project.id;
@@ -94,22 +67,36 @@ function createItem(project) {
 }
 
 function onSelectItem() {
-    top.showDialog(`/dialog/order.html?id=${this.dataset.id}`);
+    top.showDialog(`/dialog/order.html?id=${this.dataset.id}`, window);
 }
 
 function onSort (e) {
 	const
-        ascending = this.classList.toggle("ascending"),
-		df = document.createDocumentFragment(),
+        df = document.createDocumentFragment(),
+        list = document.body.querySelector("tbody"),
         index = [].indexOf.call(this.parentNode.children, this);
 
-    this.classList.add("sorted");
+	let bias;
 
-    [].slice.call($.list.children)
-        .sort((a, b) => a.children[index].textContent.localeCompare(b.children[index].textContent) * (ascending? 1: -1))
+	if (this.classList.contains("descend")) {
+		this.classList.remove("descend");
+
+		this.classList.add("ascend");
+
+		bias = 1;
+	} else {
+		this.classList.remove("ascend");
+
+		this.classList.add("descend");
+
+		bias = -1;
+	}
+	
+    [].slice.call(list.children)
+        .sort((a, b) => a.children[index].textContent.localeCompare(b.children[index].textContent) * bias)
         .forEach(e => df.appendChild(e));
 
-	$.list.appendChild(df);
+	list.appendChild(df);
 }
 
 function onSearch (e) {
@@ -151,6 +138,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -168,12 +157,11 @@ function showMessage(xhr) {
 	<body class="loading">
         <header>
             <nav>
-                <span class="button" id="add" title="Add Project">&#xf055;</span>
-                <!--span class="button" id="export" title="CSV Export">&#xf019;</span-->
+                <input type="button" value="&#xf067; Add" id="add" title="Add Item">
             </nav>
             <form>
                 <input type="text" name="keyword">
-                <input type="submit" value="&#xf002">
+                <input type="submit" value="&#xf002 Search">
             </form>
         </header>
         <main>
@@ -197,7 +185,7 @@ function showMessage(xhr) {
                         <th>발주처</th>
                         <th>계약금액</th>
                         <th>계약일</th>
-                        <th>지급조건</th>
+                        <th>종료일</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -205,7 +193,7 @@ function showMessage(xhr) {
             </table>
         </main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
 		
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>
@@ -219,7 +207,7 @@ const $ = {
         cache: document.createDocumentFragment()
     };
 
-document.getElementById("add").onclick = e => top.showDialog("/dialog/order.html");
+document.getElementById("add").onclick = e => top.showDialog("/dialog/order.html", window);
 
 [].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);
 

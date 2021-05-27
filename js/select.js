@@ -2,7 +2,6 @@
 {
     function Select(args) {
         this.text = document.createElement("input");
-        this.input = document.createElement("input");
         this.details = document.createElement("details");
         this.map = {};
         this.listener = {};
@@ -21,9 +20,6 @@
                 list = document.createElement("ul");
 
             select.className = "select";
-
-            this.input.name = args.id;
-            this.input.setAttribute("required", true);
 
             this.text.type = "text";
             this.text.setAttribute("readonly", true);
@@ -50,7 +46,7 @@
                 this.details.removeAttribute("open");
     
                 this.text.value = li.textContent;
-                this.input.value = li.dataset.key;
+                this._value = li.dataset.key;
 
                 this.fireEvent("change");
             };
@@ -64,7 +60,7 @@
 
                     li = document.createElement("li");
                     
-                    this.map[key] = li.textContent = li.title = data[args.attr];
+                    this.map[key] = li.textContent = li.title = data[args.key];
                 
                     li.dataset.key = key;
                     li.classList.add("match");
@@ -85,7 +81,6 @@
             this.details.appendChild(nav);
 
             select.appendChild(this.text);
-            select.appendChild(this.input);
             select.appendChild(this.details);
         },
         addEventListener: function (name, listener) {
@@ -100,14 +95,14 @@
                 this.listener[name].forEach(listener => listener(args));
             }
         },
-        set value (key) {
-            this.text.value = this.map[key];
-            this.input.value = key;
+        set value (key = "") {
+            this.text.value = key && this.map[key];
+            this._value = key;
     
             this.fireEvent("change");
         },
         get value () {
-            return this.input.value;
+            return this._value;
         }
     };
 }

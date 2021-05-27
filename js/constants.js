@@ -22,6 +22,9 @@ const
     ERROR_INVALID_ACCESS = {
         kr: "Error!\n\n잘못된 접근.\n"
     },
+    ERROR_NO_FILE = {
+        kr: "Error!\n\n존재하지 않는 파일.\n"
+    },
     ERROR_INCONST_AMOUNT = (...args) => {
         return {
             kr: `Error!\n\n계약금액 ${args[0].toLocaleString()}과\n매출합계 ${args[1].toLocaleString()} 불일치.`

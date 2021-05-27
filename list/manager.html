@@ -59,13 +59,9 @@ tr[data-disabled] {
 	color: #999;
 }
 
-.button:hover {
-    color: #fcba30;
-    transition: color 0.5s linear;
-}
-
-header form input {
+header input {
     font-family: "Font Awesome 5 Free";
+    height: 100%; box-sizing: border-box;
 }
 
 tr.hidden,
@@ -150,6 +146,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -167,8 +165,8 @@ function showMessage(xhr) {
 	<body class="loading">
         <header>
             <nav>
-                <span class="button" id="add" title="Add Manager">&#xf055;</span>
-                <span class="button" id="export" title="CSV Export">&#xf019;</span>
+                <input type="button" value="&#xf067; Add" id="add" title="Add Item">
+                <input type="button" value="&#xf019; Export" id="export" title="CSV Export">
             </nav>
         </header>
         <main>
@@ -193,7 +191,7 @@ function showMessage(xhr) {
             </table>
         </main>
 		
-		<div class="bg_loading"></div>
+		<div class="loading mask"></div>
 		
         <script src="/js/request.js"></script>
         <script src="/js/constants.js"></script>

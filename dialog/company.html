@@ -17,6 +17,8 @@ function showMessage(xhr) {
     case 401:
         alert(NOTICE_SESSION_EXPIRED["kr"]);
 
+        top.location.reload();
+        
         break;
     default:
         alert(`${ERROR_REQUEST_CODE["kr"]}: ${xhr.status}.`);
@@ -71,7 +73,7 @@ function showMessage(xhr) {
                     <input type="reset" value="&#xf2ed; 삭제">
                     <input type="submit" value="&#xf00c; 확인">
                 </footer>
-                <div class="bg_loading"></div>
+                <div class="loading mask"></div>
             </form>
         </main>
         <script src="/js/request.js"></script>
@@ -93,6 +95,7 @@ $.form.onsubmit = function (e) {
     $.request.execute({
         command: $.id? "set": "add",
         target: "company",
+        id: this.elements["id"].value,
         company: {
             name: this.elements["name"].value,
             id: this.elements["id"].value,
@@ -102,12 +105,12 @@ $.form.onsubmit = function (e) {
     }, function (e) {
         switch(this.status) {
         case 200:
-            top.closeDialog(true);
-
             break;
         default:
-            showMessage(this);
+            throw showMessage(this);
         }
+
+        top.closeDialog(true);
     });
 };
 
@@ -129,7 +132,7 @@ $.form.onreset = function (e) {
 
             break;
         default:
-            showMessage(this);
+            throw showMessage(this);
         }
     });
 };

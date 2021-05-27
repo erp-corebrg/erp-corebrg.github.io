@@ -69,6 +69,7 @@ td >input[type=password],
 td >input[type=number],
 td >input[type=textarea],
 td >input[type=date],
+td >input[type=email],
 td >select {
     width: 100%;
     padding: 0.5em;
@@ -106,7 +107,7 @@ form {
     position: relative;
 }
 
-.bg_loading {
+.loading.mask {
     position: absolute;
 }
 
