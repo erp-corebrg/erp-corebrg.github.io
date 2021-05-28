@@ -5,14 +5,14 @@
     border: 1px solid #000000;
 }
 
-.select >input[type=text] {
+.select >input {
     border: none;
     padding: 0.5em;
     width: 100%;
     box-sizing: border-box;
 }
 
-.select >input:not([type=text]) {
+.select >input.value {
     display: none;
 }
 
@@ -79,6 +79,7 @@
     flex: 1;
     overflow-y: auto;
     pointer-events: none;
+    background-color: #ffffff;;
 }
 
 .select li {
@@ -89,7 +90,8 @@
 }
 
 .select li:hover {
-    background-color: #ffffff;
+    background-color: #398439;
+    color: #ffffff;
 }
 
 .select li:not(.match) {

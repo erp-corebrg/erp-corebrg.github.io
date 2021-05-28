@@ -53,7 +53,7 @@ function showMessage(xhr) {
                         <tr>
                             <th>Company</th>
                             <td>
-                                <div id="company"></div>
+                                <input name="company" type="text" required>
                             </td>
                         </tr>
                         <tr>
@@ -94,19 +94,13 @@ document.getElementById("close").onclick = e =>top.closeDialog();
 $.form.onsubmit = function (e) {
     e.preventDefault();
 
-    const company = $.select.value;
-
-    if (!company) {
-        return;
-    }
-
     $.request.execute({
         command: $.id? "set": "add",
         target: "manager",
         id: $.id,
         manager: {
             name: this.elements["name"].value,
-            company: company,
+            company: $.company.value,
             mobile: this.elements["mobile"].value,
             email: this.elements["email"].value
         }
@@ -150,7 +144,7 @@ function initManager() {
         $.form.elements["mobile"].value = manager.mobile;
         $.form.elements["email"].value = manager.email;
 
-        $.select.value = manager.company;
+        $.company.value = manager.company;
 
         document.body.classList.add("edit");
 
@@ -165,25 +159,27 @@ function initManager() {
 function initCompany() {
     switch(this.status) {
     case 200:
-        $.select = new Select({
-            id: "company",
-            key: "name",
-            data: JSON.parse(this.responseText)
-        });
-        
-        if ($.id) {
-            $.request.execute({
-                command: "get",
-                target: "manager",
-                id: $.id
-            }, initManager);
-        } else {
-            document.body.classList.remove("loading");
-        }
-
         break;
     default:
         showMessage(this);
+    }
+
+    $.company = new Select(document.body.querySelector("input[name=company]"));
+
+    const companyData = JSON.parse(this.responseText);
+
+    for (let key in companyData) {
+        $.company.add(key, companyData[key].name);
+    }
+   
+    if ($.id) {
+        $.request.execute({
+            command: "get",
+            target: "manager",
+            id: $.id
+        }, initManager);
+    } else {
+        document.body.classList.remove("loading");
     }
 }
 

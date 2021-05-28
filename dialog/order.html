@@ -97,7 +97,7 @@ thead th:not(:last-of-type) {
 #list td.issue::after {
     font-family: "Font Awesome 5 Free", "맑은 고딕";
     content: "\f00c";
-    color: #00ff00;
+    color: #398439;
     display: block;
     float: right;
 }
@@ -240,7 +240,7 @@ function showInvoice() {
         id = this.dataset.id;
 
     iframe.onload = e => {
-        iframe.contentWindow.initialize($.id, $.map[id]);
+        iframe.contentWindow.initialize($.project, $.map[id]);
 
         document.querySelector("dialog").showModal();
     };
@@ -430,7 +430,7 @@ function onAddItem() {
         iframe = document.body.querySelector("iframe");
 
     iframe.onload = e => {
-        iframe.contentWindow.initialize($.id);
+        iframe.contentWindow.initialize($.project);
 
         document.querySelector("dialog").showModal();
     };
@@ -574,7 +574,7 @@ function showMessage (xhr) {
                         <tr>
                             <th>고객사</th>
                             <td>
-                                <div id="origin"></div>
+                                <input type="text" name="origin" required>
                             </td>
                         </tr>
                         <tr>
@@ -614,7 +614,7 @@ function showMessage (xhr) {
                         <tr>
                             <th>발주처</th>
                             <td>
-                                <div id="company"></div>
+                                <input type="text" name="company" required>
                             </td>
                         </tr>
                         <tr>
@@ -802,17 +802,13 @@ function initCompany(e) {
 
     const companyData = JSON.parse(this.responseText);
 
-    $.origin = new Select({
-        id: "origin",
-        key: "name",
-        data: companyData
-    });
-    
-    $.company = new Select({
-        id: "company",
-        key: "name",
-        data: companyData
-    });
+    $.origin = new Select(document.body.querySelector("input[name=origin]"));
+    $.company = new Select(document.body.querySelector("input[name=company]"));
+
+    for (let key in companyData) {
+        $.origin.add(key, companyData[key].name);
+        $.company.add(key, companyData[key].name);
+    }
 
     $.company.addEventListener("change", resetManager);
 
@@ -841,6 +837,8 @@ function initProject () {
     
     $.company.value = $.project.company;
     $.origin.value = $.project.origin;
+
+    document.body.classList.remove("loading");
 }
 
 function initAttach() {
@@ -905,9 +903,9 @@ function initInvoice() {
         }
     }
 
-    sale.forEach(invoice => {
-        createItem(invoice, buy[String(invoice.id)]).forEach(tr => df.appendChild(tr));
-    });
+    sale
+        .sort((a, b) => new Date(a.expect) - new Date(b.expect))
+        .forEach(invoice => createItem(invoice, buy[String(invoice.id)]).forEach(tr => df.appendChild(tr)));
     
     document.getElementById("list").appendChild(df);
 

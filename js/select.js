@@ -1,29 +1,25 @@
 ;"use strict";
 {
-    function Select(args) {
-        this.text = document.createElement("input");
-        this.details = document.createElement("details");
-        this.map = {};
+    function Select() {
+        this._input = arguments[0];
+        this.input = document.createElement("input");
+        this.list = document.createElement("ul");
         this.listener = {};
-
-        this.initialize(args);
+        this.map = {};
+        this.initialize();
     }
 
     Select.prototype = {
-        initialize: function (args) {
+        initialize: function () {
             const
-                select = document.getElementById(args.id),
+                container = document.createElement("div"),
+                details = document.createElement("details"),
                 nav = document.createElement("nav"),
                 form = document.createElement("form"),
                 keyword = document.createElement("input"),
-                submit = document.createElement("input"),
-                list = document.createElement("ul");
+                submit = document.createElement("input");
 
-            select.className = "select";
-
-            this.text.type = "text";
-            this.text.setAttribute("readonly", true);
-            this.text.setAttribute("required", true);
+            container.classList.add("select");
 
             keyword.type="text";
             keyword.name = "keyword";
@@ -36,52 +32,36 @@
     
                 const value = keyword.value;
     
-                [].forEach.call(list.children,
+                [].forEach.call(this.list.children,
                     li => li.classList[li.textContent.indexOf(value) === -1? "remove": "add"]("match"));
             };
     
-            list.onclick = e => {
+            this.list.onclick = e => {
                 const li = e.target;
     
-                this.details.removeAttribute("open");
+                details.removeAttribute("open");
     
-                this.text.value = li.textContent;
-                this._value = li.dataset.key;
+                this._input.value = li.dataset.key;
+                this.input.value = li.textContent;
 
                 this.fireEvent("change");
             };
-
-            {
-                const df = document.createDocumentFragment();
-                var data, li;
-
-                for (let key in args.data) {
-                    data = args.data[key];
-
-                    li = document.createElement("li");
-                    
-                    this.map[key] = li.textContent = li.title = data[args.key];
-                
-                    li.dataset.key = key;
-                    li.classList.add("match");
-
-                    df.appendChild(li);
-                }
-
-                list.appendChild(df);
-            }
 
             form.appendChild(keyword);
             form.appendChild(submit);
 
             nav.appendChild(form);
-            nav.appendChild(list);
+            nav.appendChild(this.list);
 
-            this.details.appendChild(document.createElement("summary"));
-            this.details.appendChild(nav);
+            details.appendChild(document.createElement("summary"));
+            details.appendChild(nav);
 
-            select.appendChild(this.text);
-            select.appendChild(this.details);
+            this._input.classList.add("value");
+            this._input.parentNode.appendChild(container);
+
+            container.appendChild(this._input);
+            container.appendChild(this.input);
+            container.appendChild(details);
         },
         addEventListener: function (name, listener) {
             if (!(name in this.listener)) {
@@ -95,14 +75,28 @@
                 this.listener[name].forEach(listener => listener(args));
             }
         },
-        set value (key = "") {
-            this.text.value = key && this.map[key];
-            this._value = key;
+        add: function (key, value) {
+            const li = document.createElement("li");
+                    
+            li.textContent = value;
+        
+            li.dataset.key = key;
+
+            li.classList.add("match");
+
+            this.map[key] = value;
+
+            this.list.appendChild(li);
+        },
+        set value (value = "") {
+            this._input.value = value;
+
+            this.input.value = value && this.map[value] || value;
     
             this.fireEvent("change");
         },
         get value () {
-            return this._value;
+            return this._input.value;
         }
     };
 }

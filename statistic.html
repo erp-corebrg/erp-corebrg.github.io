@@ -12,83 +12,106 @@
 table {
     width: 100%;
     table-layout: fixed;
-    /*border-collapse: collapse;*/
+    border-collapse: collapse;
 }
 
-thead {
+th {
     background-color: #34495e;
     color: #efefef;
-    position: sticky; top: 0;
-}
-
-thead th:not(:last-of-type) {
-    border-right: 1px solid rgba(52, 73, 94, 0.8);
-}
-
-th, td {
-    padding: 0.5em;
 }
 
 td {
     text-align: right;
 }
+
+th, td {
+    padding: 1em;
+    border: 1px solid #dddddd;
+}
 		</style>		
 		<script>
 
-function initProject () {
+function initInvoice () {
     switch (this.status) {
     case 200:
         break;
     default:
-        showMessage(this);
+        throw showMessage(this);
     }
 
     const
-        prjData = JSON.parse(this.responseText),
-        df = document.createDocumentFragment();
-    var
-        total = 0,
-        project,
-        year,
+        invoiceData = JSON.parse(this.responseText),
+        df = document.createDocumentFragment(),
         map = {};
+    var invoice, year, total;
 
-    for (let id in prjData) {
-        project = prjData[id];
+    for (let id in invoiceData) {
+        invoice = invoiceData[id];
 
-        total += project.deposit;
-        
-        year = project.start.split("-")[0];
+        year = invoice.expect.split("-")[0];
 
-        if (!(year in map)) {
-            map[year] = 0;
+        if (!map[year]) {
+            map[year] = {
+                sale: {
+                    expect: 0,
+                    issue: 0
+                },
+                buy: {
+                    expect: 0,
+                    issue: 0
+                }
+            };
         }
 
-        map[year] += project.deposit;
+        total = map[year][invoice.invoice? "buy": "sale"];
+        
+        total.expect += invoice.amount;
+
+        if (invoice.issue) {
+            total.issue += invoice.amount;
+        }
     }
 
-    df.appendChild(createItem("합계", total));
+    Object.keys(map)
+        .sort((a, b) => Number(a) - Number(b))
+        .forEach(year => df.appendChild(createItem(year, map[year])));
 
-    for (let year in map) {
-        df.appendChild(createItem(year, map[year]));
-    }
+    document.body.querySelector("tbody").appendChild(df);
     
-    document.getElementById("table").appendChild(df);
+    {
+        let
+            se = 0,
+            si = 0,
+            be = 0,
+            bi = 0;
+        
+        for (let year in map) {
+            total = map[year];
+
+            se += total.sale.expect;
+            si += total.sale.issue;
+            be += total.buy.expect;
+            bi += total.buy.issue;
+        }
+
+        document.getElementById("se").textContent = se.toLocaleString();
+        document.getElementById("si").textContent = si.toLocaleString();
+        document.getElementById("be").textContent = be.toLocaleString();
+        document.getElementById("bi").textContent = bi.toLocaleString();
+    }
 
     document.body.classList.remove("loading");
 }
 
-function parseProject() {
-    
-}
-
-function createItem (title, deposit) {
+function createItem (year, total) {
     const
         tr = document.createElement("tr");
     
-    tr.appendChild(document.createElement("th")).textContent = title;
-    tr.appendChild(document.createElement("td")).textContent = deposit.toLocaleString();
-    tr.appendChild(document.createElement("td"));
-    tr.appendChild(document.createElement("td"));
+    tr.appendChild(document.createElement("th")).textContent = year;
+    tr.appendChild(document.createElement("td")).textContent = total.sale.expect.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = total.sale.issue.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = total.buy.expect.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = total.buy.issue.toLocaleString();
 
     return tr;
 }
@@ -120,14 +143,23 @@ function showMessage (xhr) {
                 <tr>
                     <th rowspan="2"></th>
                     <th colspan="2">매출</th>
-                    <th rowspan="2">매입</th>
+                    <th colspan="2">매입</th>
                 </tr>
                 <tr>
                     <th>계획</th>
                     <th>확정</th>
+                    <th>계획</th>
+                    <th>확정</th>
+                </tr>
+                <tr>
+                    <th>합계</th>
+                    <th id="se"></th>
+                    <th id="si"></th>
+                    <th id="be"></th>
+                    <th id="bi"></th>
                 </tr>
             </thead>
-            <tbody id="table"></tbody>
+            <tbody></tbody>
         </table>
         <div class="loading mask"></div>
         
@@ -141,8 +173,8 @@ const $ = {
 
 $.request.execute({
     command: "get",
-    target: "project"
-}, initProject);
+    target: "invoice"
+}, initInvoice);
 
         </script>
 	
