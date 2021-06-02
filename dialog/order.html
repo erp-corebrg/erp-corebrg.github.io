@@ -214,7 +214,9 @@ h1:not(:hover) #sign,
 #attach li:not(:hover) span,
 body:not(.edit) section,
 body:not(.edit) aside tr:last-of-type,
-body:not(.edit) #remove {
+/*body:not(.edit) #remove*/
+#remove
+{
     display: none;
 }
 
@@ -697,7 +699,7 @@ const
 
 document.getElementById("sign").onclick = onSign;
 document.getElementById("save").onclick = onSaveOrder;
-document.getElementById("remove").onclick = onRemoveOrder;
+//document.getElementById("remove").onclick = onRemoveOrder;
 document.getElementById("reload").onclick = e => window.location.reload();
 document.getElementById("close").onclick = e => top.closeDialog();
 document.getElementById("add").onclick = onAddItem;
