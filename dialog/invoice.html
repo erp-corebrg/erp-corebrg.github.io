@@ -39,7 +39,8 @@ th:not(:last-of-type) {
     border-right: 1px solid #dddddd;
 }
 
-td input {
+td input,
+td select {
     padding: 0.5em;
     box-sizing: border-box;
     width: 100%; height: 100%;
@@ -106,7 +107,7 @@ function onSaveItem (e) {
             amount: Number(elements["amount"].value),
             tax: Number(elements["tax"].value),
             expect: elements["expect"].value || undefined,
-            issue: elements["expect"].disabled? elements["expect"].value: undefined,
+            confirm: elements["confirm"].value? elements["confirm"].value == 2? true: false: undefined,
             complete: elements["complete"].value || undefined,
             comment: elements["comment"].value,
             project: $.project.id,
@@ -147,28 +148,6 @@ function onRemoveItem (e) {
     });
 }
 
-function initForm (form) {
-    form.elements["amount"].onchange = function (e) {
-        form.elements["tax"].value = Math.round(Number(this.value) * 0.1);
-    };
-
-    form.elements["expect"].onchange = function (e) {
-        form.elements["issue"].disabled = false;
-    };
-
-    form.elements["issue"].onclick = function (e) {
-        if (form.elements["expect"].disabled) {
-            form.elements["expect"].disabled = false;
-
-            this.value = "\uf00c 확정";
-        } else if (form.elements["expect"].value) {
-            form.elements["expect"].disabled = true;
-
-            this.value = "\uf2ea 취소";
-        }
-    };
-}
-
 function setInvoice (invoice = {}) {
     const elements = document.getElementById("buy").elements;
 
@@ -187,7 +166,7 @@ function setInvoice (invoice = {}) {
     if (invoice.expect) {
         elements["expect"].value = invoice.expect;
 
-        if (invoice.issue) {
+        if (invoice.confirm) {
             elements["expect"].disabled = true;
             elements["issue"].value = "\uf2ea 취소";
 
@@ -236,7 +215,7 @@ function onSaveBuy (e) {
             amount: Number(elements["amount"].value),
             tax: Number(elements["tax"].value),
             expect: elements["expect"].value || undefined,
-            issue: elements["expect"].disabled? elements["expect"].value: undefined,
+            confirm: elements["confirm"].value || undefined,
             complete: elements["complete"].value || undefined,
             comment: elements["comment"].value,
             project: $.project.id,
@@ -340,7 +319,11 @@ function showMessage(xhr) {
                             <input type="date" name="expect" required>
                         </td>
                         <td>
-                            <input type="button" name="issue" value="&#xf00c; 확정">
+                            <select name="confirm">
+                                <option value="0">예정</option>
+                                <option value="1">확정</option>
+                                <option value="2">완료</option>
+                            </select>
                         </td>
                         <td>
                             <input type="date" name="complete">
@@ -449,24 +432,31 @@ const $ = {
 
 document.getElementById("add").onclick = onEditItem;
 
-{
-    const form = document.getElementById("sale");
+[
+    {
+        form: document.getElementById("sale"),
+        submit: onSaveItem,
+        reset: onRemoveItem,
+    },
+    {
+        form: document.getElementById("buy"),
+        submit: onSaveBuy,
+        reset: onRemoveBuy,
+        close: onClose
+    }
+].forEach(config => {
+    const form = config.form;
     
-    form.onsubmit = onSaveItem;
-    form.onreset = onRemoveItem;
+    form.onsubmit = config.submit;
+    form.onreset = config.reset;
+    form.elements["amount"].onchange = function (e) {
+        form.elements["tax"].value = Math.round(Number(this.value) * 0.1);
+    };
 
-    initForm(form);
-}
-
-{
-    const form = document.getElementById("buy");
-    
-    form.onsubmit = onSaveBuy;
-    form.onreset = onRemoveBuy;
-    form.elements["close"].onclick = onClose;
-
-    initForm(form);
-}
+    if (config.close) {
+        form.elements["close"].onclick = config.close;
+    }
+});
 
 function initCompany(e) {
     switch (this.status) {
@@ -498,16 +488,16 @@ function initialize () {
         
         elements["amount"].value = sale.amount;
         elements["tax"].value = sale.tax;
-        elements["complete"].value = sale.complete;
+        elements["complete"].value = sale.complete || "";
         elements["comment"].value = sale.comment || "";
 
         if (sale.expect) {
             elements["expect"].value = sale.expect;
 
-            if (sale.issue) {
-                elements["expect"].disabled = true;
-
-                elements["issue"].value = "\uf2ea 취소";
+            if ("confirm" in sale) {
+                elements["confirm"].value = sale.confirm? 2: 1;
+            } else {
+                elements["confirm"].value = 0;
             }
         }
 
@@ -525,7 +515,7 @@ function initialize () {
                 tr.appendChild(document.createElement("td")).textContent = invoice.amount;
                 tr.appendChild(document.createElement("td")).textContent = invoice.tax;
                 tr.appendChild(document.createElement("td")).textContent = invoice.expect || "";
-                tr.appendChild(document.createElement("td")).textContent = invoice.issue? "확정": "";
+                tr.appendChild(document.createElement("td")).textContent = "confirm" in invoice? invoice.confirm? "완료": "확정": "예정";
                 tr.appendChild(document.createElement("td")).textContent = invoice.complete || "";
                 tr.appendChild(document.createElement("td")).textContent = invoice.comment || "";
 

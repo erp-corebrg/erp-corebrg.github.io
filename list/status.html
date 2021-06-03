@@ -102,10 +102,14 @@ function initInvoice(e) {
             invoiceData = JSON.parse(this.responseText),
             df = document.createDocumentFragment();
 
+        Object.keys(invoiceData)
+            .sort((id1, id2) => new Date(invoiceData[id1].expect) - new Date(invoiceData[id2].expect))
+            .forEach(id => df.appendChild(createItem(invoiceData[id])));
+        /*
         for (let id in invoiceData) {
             df.appendChild(createItem(invoiceData[id]));
         }
-
+*/
         document.getElementById("list").appendChild(df);
 
         document.body.classList.remove("loading");
@@ -121,17 +125,19 @@ function createItem(invoice) {
     var status;
 
     if (invoice.complete) {
-    } else if (invoice.issue) {
-        const date = Math.ceil((new Date() - new Date(invoice.issue)) /1000 /3600 /24);
-        
-        if (date > 0) {
-            status = `+${date}`;
-        }
     } else if (invoice.expect) {
-        const date = Math.ceil((new Date() - new Date(invoice.expect)) /1000 /3600 /24);
-        
-        if (date > 0) {
-            status = `+${date}`;
+        if (invoice.confirm) {
+            const date = Math.ceil((new Date() - new Date(invoice.expect)) /1000 /3600 /24);
+            
+            if (date > 0) {
+                status = `+${date}`;
+            }
+        } else {
+            const date = Math.ceil((new Date() - new Date(invoice.expect)) /1000 /3600 /24);
+            
+            if (date > 0) {
+                status = `+${date}`;
+            }
         }
     } else {
         return;
@@ -141,8 +147,8 @@ function createItem(invoice) {
     tr.appendChild(document.createElement("td")).textContent = invoice.cName || "";
     tr.appendChild(document.createElement("th")).textContent = invoice.pName;
     tr.appendChild(document.createElement("td")).textContent = (invoice.amount + invoice.tax).toLocaleString();
-    tr.appendChild(document.createElement("td")).textContent = invoice.expect || "";
-    tr.appendChild(document.createElement("td")).textContent = invoice.issue? "완료": "";
+    tr.appendChild(document.createElement("td")).textContent = invoice.expect;
+    tr.appendChild(document.createElement("td")).textContent = invoice.confirm? "완료": "";
     tr.appendChild(document.createElement("td")).textContent = invoice.complete || "";
 
     if (status) {
@@ -176,9 +182,9 @@ function onChangeCondition () {
     const
         type = document.body.querySelector("[name=type]").value,
         status = document.body.querySelector("[name=status]").value,
-        expect = document.body.querySelector("[name=date]:checked").value;
-    
-    window.location.replace(`/list/status.html?type=${type}&status=${status}&expect=${expect}`);
+        date = document.body.querySelector("[name=date]:checked").value *= status == 4? -1: 1;
+
+    window.location.replace(`/list/status.html?type=${type}&status=${status}&date=${date}`);
 }
 
 function onSort (e) {
@@ -229,8 +235,9 @@ function showMessage (xhr) {
                 </select>
                 <select name="status">
                     <option value="1" selected>예정</option>
-                    <option value="2">미수</option>
-                    <option value="3">확정</option>
+                    <option value="2">확정</option>
+                    <option value="3">완료</option>
+                    <option value="4">종료</option>
                 </select>
                 <label>
                     <input type="radio" name="date" value="1" checked>
@@ -293,11 +300,14 @@ const
     search = new URLSearchParams(window.location.search),
     $ = {
         request: new Request(),
-        type: search.has("type")? Number(search.get("type")): 1,
+        type: Number(search.get("type")) || 1,
         status: Number(search.get("status")) || 1,
-        expect: search.has("expect")? Number(search.get("expect")): 1,
-        list: document.getElementById("list")
+        date: Number(search.get("date"))
     };
+
+if (isNaN($.date)) {
+    $.date = 1;
+}
 
 ["type", "status"].forEach(name => document.body.querySelector(`[name=${name}]`).onchange = onChangeCondition);
 [].forEach.call(document.body.querySelectorAll("[name=date]"), e => e.onchange = onChangeCondition);
@@ -307,22 +317,14 @@ document.getElementById("reload").onclick = e => location.reload();
 
 document.body.querySelector("[name=type]").value = $.type;
 document.body.querySelector("[name=status]").value = $.status;
-document.body.querySelector(`[name=date][value="${$.expect}"]`).checked = true;
+document.body.querySelector(`[name=date][value="${Math.abs($.date)}"]`).checked = true;
 
 $.request.execute({
     command: "get",
     target: "invoice",
     type: $.type,
     status: $.status,
-    expect: $.expect? (d => {
-        d.setMonth(d.getMonth() +$.expect);
-
-        const
-            mm = d.getMonth() +1,
-            dd = d.getDate();
-
-        return `${d.getFullYear()}-${mm > 9? mm: "0"+ mm}-${dd > 9? dd: "0"+ dd}`;
-    })(new Date()): undefined
+    date: $.date
 }, initInvoice);
         </script>
 	

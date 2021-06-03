@@ -54,11 +54,11 @@ function initInvoice () {
             map[year] = {
                 sale: {
                     expect: 0,
-                    issue: 0
+                    confirm: 0
                 },
                 buy: {
                     expect: 0,
-                    issue: 0
+                    confirm: 0
                 }
             };
         }
@@ -67,8 +67,8 @@ function initInvoice () {
         
         total.expect += invoice.amount;
 
-        if (invoice.issue) {
-            total.issue += invoice.amount;
+        if (invoice.confirm) {
+            total.confirm += invoice.amount;
         }
     }
 
@@ -89,9 +89,9 @@ function initInvoice () {
             total = map[year];
 
             se += total.sale.expect;
-            si += total.sale.issue;
+            si += total.sale.confirm;
             be += total.buy.expect;
-            bi += total.buy.issue;
+            bi += total.buy.confirm;
         }
 
         document.getElementById("se").textContent = se.toLocaleString();
@@ -109,9 +109,9 @@ function createItem (year, total) {
     
     tr.appendChild(document.createElement("th")).textContent = year;
     tr.appendChild(document.createElement("td")).textContent = total.sale.expect.toLocaleString();
-    tr.appendChild(document.createElement("td")).textContent = total.sale.issue.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = total.sale.confirm.toLocaleString();
     tr.appendChild(document.createElement("td")).textContent = total.buy.expect.toLocaleString();
-    tr.appendChild(document.createElement("td")).textContent = total.buy.issue.toLocaleString();
+    tr.appendChild(document.createElement("td")).textContent = total.buy.confirm.toLocaleString();
 
     return tr;
 }
