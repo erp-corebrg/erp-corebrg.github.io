@@ -98,7 +98,7 @@ function onSaveItem (e) {
     const
         elements = document.getElementById("sale").elements,
         id = Number(document.body.dataset.id);
-    
+        
     $.request.execute({
         command: isNaN(id)? "add": "set",
         target: "invoice",
@@ -107,7 +107,7 @@ function onSaveItem (e) {
             amount: Number(elements["amount"].value),
             tax: Number(elements["tax"].value),
             expect: elements["expect"].value || undefined,
-            confirm: elements["confirm"].value? elements["confirm"].value == 2? true: false: undefined,
+            confirm: elements["confirm"].value > 0? elements["confirm"].value == 2? true: false: undefined,
             complete: elements["complete"].value || undefined,
             comment: elements["comment"].value,
             project: $.project.id,
@@ -155,25 +155,15 @@ function setInvoice (invoice = {}) {
 
     elements["amount"].value = invoice.amount || 0;
     elements["tax"].value = invoice.tax || 0;
+    elements["expect"].value = invoice.expect;
 
-    /** 초기화 **/
-    elements["expect"].value = "";
-    elements["expect"].disabled = false;
-    elements["issue"].value = "\uf00c 확정";
-    elements["complete"].value = "";
-    /** **/
-
-    if (invoice.expect) {
-        elements["expect"].value = invoice.expect;
-
-        if (invoice.confirm) {
-            elements["expect"].disabled = true;
-            elements["issue"].value = "\uf2ea 취소";
-
-            elements["complete"].value = invoice.complete || "";
-        }
+    if ("confirm" in invoice) {
+        elements["confirm"].value = invoice.confirm? 2: 1;
+    } else {
+        elements["confirm"].value = 0;
     }
 
+    elements["complete"].value = invoice.complete || "";
     elements["comment"].value = invoice.comment || "";
 }
 
@@ -215,7 +205,7 @@ function onSaveBuy (e) {
             amount: Number(elements["amount"].value),
             tax: Number(elements["tax"].value),
             expect: elements["expect"].value || undefined,
-            confirm: elements["confirm"].value || undefined,
+            confirm: elements["confirm"].value > 0? elements["confirm"].value == 2? true: false: undefined,
             complete: elements["complete"].value || undefined,
             comment: elements["comment"].value,
             project: $.project.id,
@@ -399,7 +389,11 @@ function showMessage(xhr) {
                                 <input type="date" name="expect" required>
                             </td>
                             <td>
-                                <input type="button" name="issue" value="&#xf00c; 확정">
+                                <select name="confirm">
+                                    <option value="0">예정</option>
+                                    <option value="1">확정</option>
+                                    <option value="2">완료</option>
+                                </select>
                             </td>
                         </tr>
                         <tr>
@@ -533,7 +527,7 @@ function initialize () {
 
         document.body.dataset.id = sale.id;
     }
-
+    
     $.request.execute({
         command: "get",
         target: "company"

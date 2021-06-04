@@ -90,7 +90,7 @@ item.title = manager.id;
 }
 
 function onSelectItem() {
-    top.showDialog(`/dialog/manager.html?id=${this.dataset.id}`);
+    top.showDialog(`/dialog/manager.html?id=${this.dataset.id}`, window);
 }
 
 
@@ -203,7 +203,7 @@ const $ = {
         form: document.querySelector("form")
     };
 
-document.getElementById("add").onclick = e => top.showDialog("/dialog/manager.html");
+document.getElementById("add").onclick = e => top.showDialog("/dialog/manager.html", window);
 document.getElementById("export").onclick = onExport;
 
 [].forEach.call(document.body.querySelectorAll(".sort"), e => e.onclick = onSort);

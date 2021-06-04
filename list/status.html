@@ -302,12 +302,8 @@ const
         request: new Request(),
         type: Number(search.get("type")) || 1,
         status: Number(search.get("status")) || 1,
-        date: Number(search.get("date"))
+        date: search.has("date") && Number(search.get("date")) || 1
     };
-
-if (isNaN($.date)) {
-    $.date = 1;
-}
 
 ["type", "status"].forEach(name => document.body.querySelector(`[name=${name}]`).onchange = onChangeCondition);
 [].forEach.call(document.body.querySelectorAll("[name=date]"), e => e.onchange = onChangeCondition);
