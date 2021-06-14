@@ -276,13 +276,13 @@ function showMessage (xhr) {
                 <thead>
                     <tr>
                         <th></th>
-                        <th>거래처</th>
-                        <th>사업명</th>
-                        <th>거래 금액</th>
+                        <th class="sort">거래처</th>
+                        <th class="sort">사업명</th>
+                        <th class="sort">거래 금액</th>
                         <th class="sort">계산서</th>
                         <th>발급</th>
                         <th class="sort">입출금</th>
-                        <th>상태</th>
+                        <th class="sort">상태</th>
                         <th>비고</th>
                     </tr>
                 </thead>
@@ -302,7 +302,7 @@ const
         request: new Request(),
         type: Number(search.get("type")) || 1,
         status: Number(search.get("status")) || 1,
-        date: search.has("date") && Number(search.get("date")) || 1
+        date: search.has("date")? Number(search.get("date")) : 1
     };
 
 ["type", "status"].forEach(name => document.body.querySelector(`[name=${name}]`).onchange = onChangeCondition);
