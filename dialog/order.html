@@ -213,9 +213,9 @@ nav .button {
 h1:not(:hover) #sign,
 #attach li:not(:hover) span,
 body:not(.edit) section,
-body:not(.edit) aside tr:last-of-type,
+body:not(.edit) aside tr:last-of-type
 /*body:not(.edit) #remove*/
-#remove
+/*#remove*/
 {
     display: none;
 }
@@ -301,7 +301,9 @@ function setInvoice(tr, invoice) {
         tr.appendChild(document.createElement("td")).textContent = toDateString(invoice.expect);
         tr.appendChild(document.createElement("td")).textContent = "confirm" in invoice? invoice.confirm? "완료": "확정": "예정";
         tr.appendChild(document.createElement("td")).textContent = invoice.complete && toDateString(invoice.complete) || "";
+        tr.appendChild(document.createElement("td")).textContent = invoice.comment || "";
     } else {
+        tr.appendChild(document.createElement("td"));
         tr.appendChild(document.createElement("td"));
         tr.appendChild(document.createElement("td"));
         tr.appendChild(document.createElement("td"));
@@ -396,6 +398,8 @@ function onSaveOrder() {
 }
 
 function onRemoveOrder () {
+    return alert("권한이 없습니다.");
+
     if (!confirm(CONFIRM_REMOVE["kr"])) {
         return;
     }
@@ -648,23 +652,26 @@ function showMessage (xhr) {
                         <col>
                         <col>
                         <col>
+                        <col>
                         <col width="120">
                         <col width="60">
                         <col width="120">
+                        <col>
                     </colgroup>
                     <thead>
                         <tr>
-                            <th colspan="7">매출</th>
-                            <th colspan="7">매입</th>
+                            <th colspan="8">매출</th>
+                            <th colspan="8">매입</th>
                         </tr>
                         <tr>
-                            <th></th>
+                            <th>공급자</th>
                             <th>금액</th>
                             <th>부가세</th>
                             <th>합계</th>
                             <th>계산서</th>
                             <th>발급</th>
                             <th>입금</th>
+                            <th>비고</th>
                             <th>공급자</th>
                             <th>금액</th>
                             <th>부가세</th>
@@ -672,6 +679,7 @@ function showMessage (xhr) {
                             <th>계산서</th>
                             <th>발급</th>
                             <th>출금</th>
+                            <th>비고</th>
                         </tr>
                     </thead>
                     <tbody id="list"></tbody>
@@ -700,7 +708,7 @@ const
 
 document.getElementById("sign").onclick = onSign;
 document.getElementById("save").onclick = onSaveOrder;
-//document.getElementById("remove").onclick = onRemoveOrder;
+document.getElementById("remove").onclick = onRemoveOrder;
 document.getElementById("reload").onclick = e => window.location.reload();
 document.getElementById("close").onclick = e => top.closeDialog();
 document.getElementById("add").onclick = onAddItem;
