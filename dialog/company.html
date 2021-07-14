@@ -9,8 +9,193 @@
 @import "/css/dialog.css";
 @import "/css/fa.css";
 
+#attach {
+    border: 10px solid #ddd;
+    padding: 1em;
+    margin: 0;
+    list-style: none;
+}
+
+#attach.drop {
+    border-color: #34495e;
+    border-style: dotted;
+}
+
+#attach li {
+    cursor: pointer;
+}
+
+#attach li span {
+    display: inline-block; margin-left: 1em;
+    cursor: default;
+}
+
+#attach li:hover {
+    text-decoration: underline;
+}
+
+#attach li:hover span::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f00d";
+}
         </style>
         <script>
+function onSubmit (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: $.id? "set": "add",
+        target: "company",
+        id: this.elements["id"].value,
+        company: {
+            name: this.elements["name"].value,
+            id: this.elements["id"].value,
+            ceo: this.elements["ceo"].value,
+            address: this.elements["address"].value
+        }
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            break;
+        default:
+            throw showMessage(this);
+        }
+
+        top.closeDialog(true);
+    });
+}
+
+function onReset (e) {
+    e.preventDefault();
+
+    $.request.execute({
+        command: "remove",
+        target: "company",
+        id: $.id
+    }, function (e) {
+        switch(this.status) {
+        case 200:
+            top.closeDialog(true);
+
+            break;
+        case 500:
+            alert(ERROR_REMOVE_RESTRICT["kr"]);
+
+            break;
+        default:
+            throw showMessage(this);
+        }
+    });
+}
+
+function upload(files) {
+    const file = files.pop();
+
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            $.request.upload({
+                id: $.id,
+                name: file.name,
+                type: "company",
+                file: reader.result
+            }, function () {
+                switch (this.status) {
+                case 200:
+                    upload(files);
+                
+                    break;
+                default:
+                    showMessage(this);
+                }
+            });
+        };
+
+        reader.readAsArrayBuffer(file);
+    } else {
+        window.location.reload();
+    }
+}
+
+function download(e) {
+    const li = this;
+
+    if(e.target === li) {
+        document.body.classList.add("loading");
+
+        $.request.download({
+            id: li.dataset.id,
+            name: li.dataset.name,
+        }, function () {
+            switch(this.status) {
+            case 204:
+                alert(ERROR_NO_FILE["kr"]);
+            case 200:
+                break;
+            default:
+                throw showMessage(this);
+            }
+
+            document.body.classList.remove("loading");
+        });
+    } else if (confirm(CONFIRM_REMOVE["kr"])) {
+        document.body.classList.add("loading");
+        
+        $.request.execute({
+            command: "remove",
+            target: "file",
+            id: li.dataset.id
+        }, function () {
+            switch(this.status) {
+            case 200:
+                document.getElementById("attach").removeChild(li);
+
+                document.body.classList.remove("loading");
+
+                break;
+            default:
+                showMessage(this);
+            }
+        });
+    }
+}
+
+function initAttach() {
+    switch(this.status) {
+    case 200:
+        break;
+    default:
+        throw showMessage(this);
+    }
+
+    const
+        fileData = JSON.parse(this.responseText),
+        df = document.createDocumentFragment();
+
+    for (let id in fileData) {
+        df.appendChild(createAttach(fileData[id]));
+    }
+
+    document.getElementById("attach").appendChild(df);
+
+    document.body.classList.remove("loading");
+}
+
+function createAttach(file) {
+    const li = document.createElement("li");
+
+    li.textContent = file.name;
+
+    li.dataset.id = file.id;
+    li.dataset.name = file.name;
+
+    li.appendChild(document.createElement("span"));
+
+    li.onclick = download;
+
+    return li;
+}
 
 function showMessage(xhr) {
     switch (xhr.status) {
@@ -67,6 +252,12 @@ function showMessage(xhr) {
                                 <input name="address" type="text">
                             </td>
                         </tr>
+                        <tr>
+                            <th>첨부파일</th>
+                            <td>
+                                <ul id="attach"></ul>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
                 <footer>
@@ -89,75 +280,65 @@ const search = new URLSearchParams(window.location.search),
 
 document.getElementById("close").onclick = e =>top.closeDialog();
 
-$.form.onsubmit = function (e) {
-    e.preventDefault();
+{
+    const attach = document.getElementById("attach");
 
-    $.request.execute({
-        command: $.id? "set": "add",
-        target: "company",
-        id: this.elements["id"].value,
-        company: {
-            name: this.elements["name"].value,
-            id: this.elements["id"].value,
-            ceo: this.elements["ceo"].value,
-            address: this.elements["address"].value
-        }
-    }, function (e) {
-        switch(this.status) {
-        case 200:
-            break;
-        default:
-            throw showMessage(this);
-        }
-
-        top.closeDialog(true);
+    attach.addEventListener("dragover", e => {
+        e.preventDefault();
     });
-};
 
-$.form.onreset = function (e) {
-    e.preventDefault();
+    attach.addEventListener("dragenter", e => {
+        e.preventDefault();
 
-    $.request.execute({
-        command: "remove",
-        target: "company",
-        id: $.id
-    }, function (e) {
-        switch(this.status) {
-        case 200:
-            top.closeDialog(true);
-
-            break;
-        case 500:
-            alert(ERROR_REMOVE_RESTRICT["kr"]);
-
-            break;
-        default:
-            throw showMessage(this);
-        }
+        attach.classList.add("drop");
     });
-};
+
+    attach.addEventListener("dragleave", e => {
+        e.preventDefault();
+
+        attach.classList.remove("drop");
+    });
+
+    attach.addEventListener("drop", e => {
+        e.preventDefault();
+        
+        attach.classList.remove("drop");
+
+        document.body.classList.add("loading");
+
+        upload([].slice.call(e.dataTransfer.files));
+    });
+}
+
+$.form.onsubmit = onSubmit;
+$.form.onreset = onReset;
 
 function initCompany() {
     switch(this.status) {
     case 200:
-        $.company = JSON.parse(this.responseText);
-
-        $.form.elements["name"].value = $.company.name;
-        $.form.elements["id"].value = $.company.id;
-        $.form.elements["address"].value = $.company.address;
-        $.form.elements["ceo"].value = $.company.ceo;
-
-        document.body.classList.add("edit");
-
-        document.body.classList.remove("loading");
-
         break;
     default:
-        showMessage(this);
+        throw showMessage(this);
     }
+
+    $.company = JSON.parse(this.responseText);
+
+    $.form.elements["name"].value = $.company.name;
+    $.form.elements["id"].value = $.company.id;
+    $.form.elements["address"].value = $.company.address;
+    $.form.elements["ceo"].value = $.company.ceo;
+
+    $.request.execute({
+        command: "get",
+        target: "file",
+        type: "company",
+        tid: $.id
+    }, initAttach);
 }
 
 if ($.id) {
+    document.body.classList.add("edit");
+
     $.request.execute({
         command: "get",
         target: "company",
