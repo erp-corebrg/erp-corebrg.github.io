@@ -38,6 +38,10 @@
     font-family: "Font Awesome 5 Free";
     content: "\f00d";
 }
+
+body:not(.edit) .edit {
+    display: none;
+}
         </style>
         <script>
 function onSubmit (e) {
@@ -252,7 +256,7 @@ function showMessage(xhr) {
                                 <input name="address" type="text">
                             </td>
                         </tr>
-                        <tr>
+                        <tr class="edit">
                             <th>첨부파일</th>
                             <td>
                                 <ul id="attach"></ul>
